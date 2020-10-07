@@ -238,4 +238,3 @@ dependencies:
     - shapely==1.7.1
     - snuggs==1.4.7
     - xarray==0.16.1
-prefix: /home/asajina/software/miniconda3/envs/humset

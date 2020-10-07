@@ -7,10 +7,10 @@ from utils.definitions import get_project_path
 
 def main(argc, argv):
     country = 'NGA'
-    wp_file = os.path.join(get_project_path(), "data", "worldpop", '%s' % country, '%s_ppp_2015.tif' % country.lower())
+    wp_file = os.path.join(get_project_path(), "data", "humdata", '%s' % country, 'population_%s_2018-10-01.tif' % country.lower())
 
     patch_size = 8192 # [px]
-    output_dirpath = os.path.join(get_project_path(), "data", "worldpop", '%s' % country, "patches")
+    output_dirpath = os.path.join(get_project_path(), "data", "humdata", '%s' % country, "patches")
 
     # Create directory if doesn't exist:
     os.system('mkdir -p %s' % output_dirpath)
