@@ -36,6 +36,8 @@ dependencies:
   - freetype=2.10.0
   - freexl=1.0.5
   - gdal=3.0.4
+  - geographiclib=1.50
+  - geopy=2.0.0
   - geos=3.8.0
   - geotiff=1.5.1
   - gettext=0.19.8.1
