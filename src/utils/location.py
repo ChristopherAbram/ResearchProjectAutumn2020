@@ -11,8 +11,8 @@ class GeoLocation:
         if type(name) is str:
             l = self.__app.geocode(name).raw
             return {   
-                'lat': l['lat'], \
-                'lon': l['lon'], \
+                'lat': float(l['lat']), \
+                'lon': float(l['lon']), \
                 'bbox': l['boundingbox']
             }
         elif type(name) is list:

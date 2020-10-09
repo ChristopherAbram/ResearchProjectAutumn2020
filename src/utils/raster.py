@@ -4,6 +4,7 @@ import numpy as np
 import rasterio
 from rasterio.windows import Window
 import itertools
+from shapely.geometry import box
 
 
 class RasterWindow:
@@ -55,3 +56,15 @@ class RasterWindowSize(RasterWindow):
         except StopIteration:
             self._raster.close()
             raise
+
+
+def get_window_px(raster, x, y, width, height):
+    return raster.read(1, window=Window.from_slices((x, x + height), (y, y + width)))
+
+
+def get_window_geo(raster, bbox):
+    [lonl, latb, lonr, latu] = bbox.bounds
+    lbx, lby = raster.index(lonl, latb)
+    rux, ruy = raster.index(lonr, latu)
+    w, h = ruy - lby, lbx - rux
+    return get_window_px(raster, lbx - 2*h, lby - w, w, h)
