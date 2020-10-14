@@ -6,13 +6,23 @@ Assessing biases in AI generated human settlement data from high-resolution sate
 ```bash
 # Create:
 conda env create --file environment.yml
-# Update (after someone else has changes):
+# Update (after someone else has changed):
 conda env update --file environment.yml
 ```
 
 Set the `PYTHONPATH` to the repo (module setup):
 ```bash
-export PYTHONPATH="$PYTHONPATH:<location-of-project>/ResearchProjectAutumn2020/src"
+export PYTHONPATH="$PYTHONPATH:<location-of-project>/ResearchProjectAutumn2020/src:<location-of-project>/ResearchProjectAutumn2020:<location-of-project>/ResearchProjectAutumn2020/test"
+```
+
+# Tests
+All tests are located in `test` subdirectory of this project. You can run all suites from `test/runner.py` or single test case from specified test file, e.g. `test/utils/location.py`.
+```bash
+# In humset conda env
+# All suites:
+python test/runner.py
+# A single test case for a module, e.g.:
+python -m unittest test/utils/location.py
 ```
 
 # Data

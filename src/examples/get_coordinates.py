@@ -2,7 +2,7 @@ from utils.location import GeoLocation
 
 
 # list of strings
-places = ['Hong Kong', 'Lagos, Nigeria']
+places = ['New York', 'Hong Kong', 'Warszawa', 'Berlin']
 
 geo = GeoLocation()
 print("By place name")

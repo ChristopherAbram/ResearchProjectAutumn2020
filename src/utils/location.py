@@ -13,7 +13,7 @@ class GeoLocation:
             return {   
                 'lat': float(l['lat']), \
                 'lon': float(l['lon']), \
-                'bbox': l['boundingbox']
+                'bbox': [float(elem) for elem in l['boundingbox']]
             }
         elif type(name) is list:
             data = dict()
