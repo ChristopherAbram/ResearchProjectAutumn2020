@@ -28,4 +28,5 @@ python -m unittest test/utils/location.py
 # Data
 
 Humdata: https://data.humdata.org/dataset/highresolutionpopulationdensitymaps-nga <br>
-Worldpop: ftp://ftp.worldpop.org.uk/GIS/Population/Global_2000_2020/2018/NGA/
+Worldpop: ftp://ftp.worldpop.org.uk/GIS/Population/Global_2000_2020/2018/NGA/ <br>
+GRID3: https://s3-eu-west-1.amazonaws.com/files.grid3.gov.ng/pop/GRID3+-+NGA+-+National+Population+Data+-+v1.2.zip
