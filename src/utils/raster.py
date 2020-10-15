@@ -19,14 +19,15 @@ class RasterWindow:
         self.si_width, self.si_height = \
             self._raster.width // self.num_xslices, \
             self._raster.height // self.num_yslices
+        self.xi, self.yi = 0, 0
 
     def __iter__(self):
         return self
 
     def __next__(self):
         try:
-            xi, yi = next(self._w_pairs)
-            return self.__get(xi, yi)
+            self.xi, self.yi = next(self._w_pairs)
+            return self.__get(self.xi, self.yi)
         except StopIteration:
             self._raster.close()
             raise
@@ -64,8 +65,20 @@ class RasterWindow:
                 "Window indexes out of range. Given ({}, {}) and maximum are ({}, {})".format(
                     x, y, self.num_yslices - 1, self.num_xslices - 1))
 
+        self.xi, self.yi = x, y
         X, _, (w, h) = self.__get(x, y)
         return X, (w, h)
+
+    def get_coords(self, row, col):
+        """
+        Find geo coordinate by row and col given with respect to patch.
+        row - the pixel row,
+        col - the pixel column
+        """
+        col_ = self.yi * self.si_width + col
+        row_ = self.xi * self.si_height + row
+        return self._raster.xy(row_, col_)
+
 
     def get_raster(self):
         return self._raster

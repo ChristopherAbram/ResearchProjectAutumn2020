@@ -15,10 +15,13 @@ from utils.raster import RasterWindow, RasterWindowSize, get_window_px, get_wind
 def main(argc, argv):
 
     country = 'NGA'
-    in_file = os.path.join(
-        get_project_path(), "data", "humdata", '%s' % country, 'population_%s_2018-10-01.tif' % country.lower())
+    # in_file = os.path.join(
+    #     get_project_path(), "data", "humdata", '%s' % country, 'population_%s_2018-10-01.tif' % country.lower())
 
-    cmap = plt.cm.magma
+    in_file = os.path.join(
+        get_project_path(), "data", "grid", '%s' % country, '%s_population.tif' % country.lower())
+
+    # cmap = plt.cm.magma
     geo = GeoLocation()
     with rasterio.open(in_file) as dataset:
         # Loop through your list of coords
@@ -31,10 +34,11 @@ def main(argc, argv):
         print('Pixel Y, X coords: {}, {}'.format(py, px))
 
         # window = get_window_px(dataset, px - 500, py - 500, 1000, 1000)
-        rows, cols = rasterio.transform.rowcol(dataset.transform, [3.35-0.1, 3.35+0.1], [6.5-0.1, 6.5+0.1])
+        # rows, cols = rasterio.transform.rowcol(dataset.transform, [3.35-0.1, 3.35+0.1], [6.5-0.1, 6.5+0.1])
         window = get_window_geo(dataset, box(3.35-0.1, 6.5-0.1, 3.35+0.1, 6.5+0.1))
+        window = window * 255
         fig, ax = plt.subplots()
-        ax.imshow(window, cmap=cmap, norm=LogNorm())
+        ax.imshow(window)
         plt.show()
 
             # Build an NxN window

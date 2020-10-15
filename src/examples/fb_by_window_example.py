@@ -48,17 +48,17 @@ def main(argc, argv):
 
     # Read by window, define horizontal and vertical split.
     # e.g. RasterWindow(in_file, 8, 4) splits underlying data into matrix of 8 columns and 4 rows.
-    for (window, (row, col), (width, height)) in RasterWindow(in_file, 8, 4):
-        fig, ax = plt.subplots()
-        ax.imshow(window, cmap=cmap, norm=LogNorm())
-        plt.show()
-
-    # Read by window size, 5000 X 3000 px
-    # Note: The sizes around edge will differ from given size. You can get these values from (width, height)
-    # for (window, (row, col), (width, height)) in RasterWindowSize(in_file, 5000, 3000):
+    # for (window, (row, col), (width, height)) in RasterWindow(in_file, 8, 4):
     #     fig, ax = plt.subplots()
     #     ax.imshow(window, cmap=cmap, norm=LogNorm())
     #     plt.show()
+
+    # Read by window size, 5000 X 3000 px
+    # Note: The sizes around edge will differ from given size. You can get these values from (width, height)
+    for (window, (row, col), (width, height)) in RasterWindowSize(in_file, 5000, 3000):
+        fig, ax = plt.subplots()
+        ax.imshow(window, cmap=cmap, norm=LogNorm())
+        plt.show()
 
     return 0
 
