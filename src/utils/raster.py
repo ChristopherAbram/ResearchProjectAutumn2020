@@ -83,6 +83,13 @@ class RasterWindow:
     def get_raster(self):
         return self._raster
 
+    def get_raster_bbox(self):
+        """return spatial bbox in form [[x_low, x_high], [y_low, y_high]]"""
+        upper_left = self._raster.transform * (0,0)
+        lower_right = self._raster.transform * (self._raster.width, self._raster.height)
+        bbox = [[upper_left[0], lower_right[0]],[lower_right[1], upper_left[1]]]
+        return bbox
+
 
 class RasterWindowSize(RasterWindow):
     def __init__(self, filepath, width=1024, height=1024):
