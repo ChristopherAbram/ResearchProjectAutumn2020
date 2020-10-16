@@ -6,22 +6,23 @@ import itertools
 from matplotlib.colors import LogNorm
 import rasterio
 from rasterio.windows import Window
+from salem import GoogleVisibleMap
 
 from utils.definitions import get_project_path
 from utils.raster import RasterWindow, RasterWindowSize
 
 
-def upsize(img, n):
-    return np.repeat(np.repeat(img,n,axis=1),n,axis=0)
+def upsize(img, x, y):
+    return np.repeat(np.repeat(img,x,axis=1),y,axis=0)
 
 
 def main(argc, argv):
 
     country = 'NGA'
     fb_infile = os.path.join(
-        get_project_path(), "data", "humdata", '%s' % country, 'population_%s_2018-10-01.tif' % country.lower())
+        get_project_path(), "data", "humdata", 'population_%s_2018-10-01.tif' % country.lower())
 
-    grid_infile = os.path.join(get_project_path(), "data", "grid", '%s' % country, '%s_population.tif' % country.lower())
+    grid_infile = os.path.join(get_project_path(), "data", "grid3", '%s - population - v1.2 - mastergrid.tif' % country)
 
     xsplit, ysplit = 200, 200
     fb = RasterWindow(fb_infile, xsplit, ysplit)
@@ -37,7 +38,7 @@ def main(argc, argv):
         fb_win[np.where(fb_win > 0)] = 255
         fb_win = fb_win[:h,:w]
         grid_win = grid_win * 255
-        grid_win = upsize(grid_win, 3)
+        grid_win = upsize(grid_win, 3, 3) # fb-dataset has 1-arcsec resolution, grid has 3-arcsec
         grid_win = grid_win[:h,:w]
 
         diff_win = fb_win - grid_win
@@ -76,8 +77,13 @@ def main(argc, argv):
         #     ax4.set_title('FN')
         #     plt.show()
 
-    plt.imshow(metrics[:,:,0])
+    c = plt.imshow(metrics[:,:,0])
+    plt.colorobar(c)
+    plt.suptitle('HRSL-Grid3 FP rate Nigeria')
     plt.show()
+
+    #np.savetxt('NGA-FP.csv', metrics[:,:,0], delimiter=',')
+    #np.savetxt('NGA-FN.csv', metrics[:,:,1], delimiter=',')
 
     return 0
 
