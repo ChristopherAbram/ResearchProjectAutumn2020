@@ -9,7 +9,7 @@ from matplotlib.colors import LogNorm
 from utils.location import GeoLocation
 
 from utils.definitions import get_project_path
-from utils.raster import RasterWindow, RasterWindowSize, get_window_px, get_window_geo
+from utils.raster import RasterTable, RasterTableSize, get_window_px, get_window_geo
 
 
 def main(argc, argv):
@@ -19,7 +19,7 @@ def main(argc, argv):
     #     get_project_path(), "data", "humdata", '%s' % country, 'population_%s_2018-10-01.tif' % country.lower())
 
     in_file = os.path.join(
-        get_project_path(), "data", "grid", '%s' % country, '%s_population.tif' % country.lower())
+        get_project_path(), "data", "grid3", 'NGA - population - v1.2 - mastergrid.tif')
 
     # cmap = plt.cm.magma
     geo = GeoLocation()

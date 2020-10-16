@@ -3,14 +3,14 @@ from unittest import mock
 from unittest.mock import patch
 import os, glob, itertools, rasterio
 from os import path
-from rasterio.windows import Window
+from rasterio.windows import Window as rWindow
 import numpy as np
 
 from src.utils.definitions import get_project_path
-from src.utils.raster import RasterWindow, RasterWindowSize
+from src.utils.raster import RasterTable, RasterTableSize
 
 
-class RasterWindowTest(unittest.TestCase):
+class RasterTableTest(unittest.TestCase):
 
     def setUp(self):
         self.infile = path.join(get_project_path(), "test", "data", "example1.tif")
@@ -25,89 +25,94 @@ class RasterWindowTest(unittest.TestCase):
 
     def test_wrong_path(self):
         with self.assertRaises(Exception):
-            RasterWindow('this is a wrong path')
+            RasterTable('this is a wrong path')
 
     def test_open_tiff(self):
-        RasterWindow(self.infile)
+        RasterTable(self.infile)
 
     def test_iteration_simple(self):
         with self.assertRaises(StopIteration):
-            it = RasterWindow(self.infile, 8, 4)
+            it = RasterTable(self.infile, 8, 4).iterator()
             for i in range(8*4 + 4):
                 next(it)
 
     def test_iteration_rows_and_cols(self):
         pairs = list(itertools.product(range(4), range(8)))
-        for ((window, (row, col), size), pair) in zip(RasterWindow(self.infile, 8, 4), pairs):
-            self.assertEqual((row, col), pair)
+        table = RasterTable(self.infile, 8, 4)
+        for (window, pair) in zip(table.iterator(), pairs):
+            self.assertEqual(window.pos, pair)
 
-    def get_window_size(self, xslices, yslices):
-        w, h = 0, 0
-        with rasterio.open(self.infile) as raster:
-            w, h = raster.width, raster.height
-        # Window sizes:
-        return w // xslices, h // yslices
+    # def get_window_size(self, xslices, yslices):
+    #     w, h = 0, 0
+    #     with rasterio.open(self.infile) as raster:
+    #         w, h = raster.width, raster.height
+    #     # Window sizes:
+    #     return w // xslices, h // yslices
 
     def test_get_out_of_range(self):
-        it = RasterWindow(self.infile, 8, 4)
+        table = RasterTable(self.infile, 8, 4)
         with self.assertRaises(IndexError):
-            it.get(8, 2)
+            table.get(8, 2)
 
     def test_get_by_index(self):
-        it = RasterWindow(self.infile, 8, 4)
-        window, (w, h) = it.get(3, 1)
+        table = RasterTable(self.infile, 8, 4)
+        window = table.get(3, 1)
 
-    def test_read_by_slice_consistence(self):
+    def test_raster_table_iterator_exhaustiveness(self):
         pairs = [(2, 2), (3, 11), (103, 10), (7, 4)]
         for j, filename in enumerate(self.infiles):
-            it = RasterWindow(filename, 5, 5)
             for i, pair in enumerate(pairs):
-                outfile = path.join(get_project_path(), "test", "data", "tmp", "example_%s_%s.tif" % (j, i))
-                with rasterio.open(outfile, 'w',
-                        driver='GTiff', width=it.get_raster().width, height=it.get_raster().height, count=1,
-                        dtype=rasterio.ubyte) as dst:
+                outfile = path.join(get_project_path(), "test", "data", "tmp", "example0_%s_%s.tif" % (j, i))
+                table = RasterTable(filename, pair[0], pair[1])
 
-                    rw = RasterWindow(filename, pair[0], pair[1])
-                    for (win, (row, col), (width, height)) in rw:
-                        win = np.array(win, dtype=rasterio.ubyte)
-                        dst.write(win, window=Window(
-                            col * rw.si_width, row * rw.si_height, width, height), indexes=1)
+                with rasterio.open(outfile, 'w',
+                    driver='GTiff', width=table.get_raster().width, height=table.get_raster().height, count=1,
+                    dtype=rasterio.ubyte) as dst:
+
+                    for window in table.iterator():
+                        data = np.array(window.data, dtype=rasterio.ubyte)
+                        width, height = window.size
+                        row, col = window.pos
+                        dst.write(data, window=rWindow(
+                            col * table.si_width, row * table.si_height, width, height), indexes=1)
 
                 with rasterio.open(filename) as dataset, rasterio.open(outfile) as bypatch:
                     X = dataset.read()
                     Y = bypatch.read()
                     self.assertTrue((X == Y).all())
 
-    def test_read_by_slice_consistence_size(self):
+    def test_raster_table_size_iterator_exhaustiveness(self):
         pairs = [(23, 20), (103, 160), (303, 254), (55, 11)]
         for j, filename in enumerate(self.infiles):
             for i, pair in enumerate(pairs):
-                outfile = path.join(get_project_path(), "test", "data", "tmp", "example_%s_%s.tif" % (j, i))
-                it = RasterWindow(filename, 5, 5)
+                outfile = path.join(get_project_path(), "test", "data", "tmp", "example1_%s_%s.tif" % (j, i))
+                table = RasterTableSize(filename, pair[0], pair[1])
+                
                 with rasterio.open(outfile, 'w',
-                        driver='GTiff', width=it.get_raster().width, height=it.get_raster().height, count=1,
-                        dtype=rasterio.ubyte) as dst:
+                    driver='GTiff', width=table.get_raster().width, height=table.get_raster().height, count=1,
+                    dtype=rasterio.ubyte) as dst:
 
-                    rw = RasterWindowSize(filename, pair[0], pair[1])
-                    for (win, (row, col), (width, height)) in rw:
-                        win = np.array(win, dtype=rasterio.ubyte)
-                        dst.write(win, window=Window(    
-                            col * rw.si_width, row * rw.si_height, width, height), indexes=1)
+                    for window in table.iterator():
+                        data = np.array(window.data, dtype=rasterio.ubyte)
+                        width, height = window.size
+                        row, col = window.pos
+                        dst.write(data, window=rWindow(
+                            col * table.si_width, row * table.si_height, width, height), indexes=1)
 
                 with rasterio.open(filename) as dataset, rasterio.open(outfile) as bypatch:
                     X = dataset.read()
                     Y = bypatch.read()
                     self.assertTrue((X == Y).all())
 
-    def test_get_patch(self):
-        it = RasterWindow(self.infile, 8, 4)
-        for win, (row, col), (width, height) in RasterWindow(self.infile, 8, 4):
-            self.assertTrue((win == it.get(row, col)[0]).all())
+    def test_raster_table_compare_iterator_and_get_patches(self):
+        table = RasterTable(self.infile, 8, 4)
+        for window in table.iterator():
+            self.assertTrue((window.data == table.get(window.pos[0], window.pos[1]).data).all())
 
-    def test_get_patch_size(self):
-        it = RasterWindowSize(self.infile, 13, 14)
-        for win, (row, col), (width, height) in RasterWindowSize(self.infile, 13, 14):
-            self.assertTrue((win == it.get(row, col)[0]).all())
+    def test_raster_table_size_compare_iterator_and_get_patches(self):
+        table = RasterTableSize(self.infile, 13, 14)
+        for window in table.iterator():
+            self.assertTrue((window.data == table.get(window.pos[0], window.pos[1]).data).all())
 
 
 if __name__ == "__main__":

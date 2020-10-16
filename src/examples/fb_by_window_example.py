@@ -8,14 +8,14 @@ import rasterio
 from rasterio.windows import Window
 
 from utils.definitions import get_project_path
-from utils.raster import RasterWindow, RasterWindowSize
+from utils.raster import RasterTable, RasterTableSize
 
 
 def main(argc, argv):
 
     country = 'NGA'
     in_file = os.path.join(
-        get_project_path(), "data", "humdata", '%s' % country, 'population_%s_2018-10-01.tif' % country.lower())
+        get_project_path(), "data", "humdata", 'population_%s_2018-10-01.tif' % country.lower())
 
     cmap = plt.cm.magma
 
@@ -47,17 +47,19 @@ def main(argc, argv):
 
 
     # Read by window, define horizontal and vertical split.
-    # e.g. RasterWindow(in_file, 8, 4) splits underlying data into matrix of 8 columns and 4 rows.
-    # for (window, (row, col), (width, height)) in RasterWindow(in_file, 8, 4):
-    #     fig, ax = plt.subplots()
-    #     ax.imshow(window, cmap=cmap, norm=LogNorm())
-    #     plt.show()
+    # e.g. RasterTable(in_file, 8, 4) splits underlying data into matrix of 8 columns and 4 rows.
+    table = RasterTable(in_file, 8, 4)
+    for window in table:
+        fig, ax = plt.subplots()
+        ax.imshow(window.data, cmap=cmap, norm=LogNorm())
+        plt.show()
 
     # Read by window size, 5000 X 3000 px
     # Note: The sizes around edge will differ from given size. You can get these values from (width, height)
-    for (window, (row, col), (width, height)) in RasterWindowSize(in_file, 5000, 3000):
+    table = RasterTableSize(in_file, 5000, 3000)
+    for window in table:
         fig, ax = plt.subplots()
-        ax.imshow(window, cmap=cmap, norm=LogNorm())
+        ax.imshow(window.data, cmap=cmap, norm=LogNorm())
         plt.show()
 
     return 0

@@ -16,7 +16,7 @@ from utils.definitions import get_project_path
 def main(argc, argv):
 
     country = 'NGA'
-    wp_file = os.path.join(get_project_path(), "data/humdata", '%s/population_%s_2018-10-01.tif' % (country, country.lower()))
+    wp_file = os.path.join(get_project_path(), "data/humdata", 'population_%s_2018-10-01.tif' % country.lower())
 
     with rasterio.open(wp_file) as pop:
         X = pop.read(1)
