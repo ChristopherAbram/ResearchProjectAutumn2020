@@ -175,7 +175,8 @@ class RasterTableIter:
 
 
 def get_window_px(raster, x, y, width, height):
-    return raster.read(1, window=rWindow.from_slices((x, x + height), (y, y + width)))
+    w = rWindow.from_slices((x, x + height), (y, y + width))
+    return raster.read(1, window=w), w
 
 
 def get_window_geo(raster, bbox):
