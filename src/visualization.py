@@ -38,6 +38,14 @@ class AlignMapsEditor:
 
         return grid
 
+    def convolve(self, img_in, img_out, kernel, stride):
+        for i in range(img_in.shape[0] // stride):
+            for j in range(img_in.shape[1] // stride):
+                img_out[i,j] = np.sum(\
+                                img_in[i*stride:i*stride+stride, j*stride:j*stride+stride] *\
+                                kernel)
+        return img_out
+
     def update(self, val):
         box_spread = val / 1000.
         with rasterio.open(self.humdata_path) as humdata, rasterio.open(self.grid3_path) as grid3:
