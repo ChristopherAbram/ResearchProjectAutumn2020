@@ -8,16 +8,17 @@ from shapely.geometry import box
 class Window:
     """
     Stores one entry of data retrieved from RasterTable instance.
+
+    Attributes:
+        data (ndarray): numpy 2D array with data,
+        pos (tuple): (x, y) pair telling where the window is located in RasterTable,
+        size (tuple): the actual size of the window (width, height),
+        window (rasterio.windows.Window): an instance of corresponding rasterio window.
     """
-    def __init__(self, data, pos):
-        """
-        Initializes Window instance.
-        data - a numpy array of data,
-        pos - a position of window in RasterTable, row and column,
-        size - the actual size of the window (width, height)
-        """
+    def __init__(self, data, pos, window=None):
         self.data = data
         self.pos = pos
+        self.window = window
         self.size = (self.data.shape[1], self.data.shape[0])
 
 
@@ -71,7 +72,7 @@ class RasterTable:
         if yi == (self.width_slices - 1) and (xi == self.height_slices - 1) and w_ > 0 and h_ > 0:
             w = rWindow(yi * self.si_width, xi * self.si_height, w_, h_)
 
-        return Window(self._raster.read(1, window=w), (xi, yi))
+        return Window(self._raster.read(1, window=w), (xi, yi), window=w)
 
     def get(self, x, y):
         """
@@ -129,8 +130,8 @@ class RasterTable:
         x - the row index of window table,
         y - the column index of window table
         """
-        up_left = self.get_coords(0, 0)
-        bottom_right = self.get_coords(self.si_height - 1, self.si_width - 1)
+        up_left = self.find_geo_coords(x, y, 0, 0)
+        bottom_right = self.find_geo_coords(x, y, self.si_height - 1, self.si_width - 1)
         return box(up_left[0], up_left[1], bottom_right[0], bottom_right[1])
 
     def get_by_geo_bbox(self, bbox):
@@ -146,6 +147,79 @@ class RasterTableSize(RasterTable):
 
     def __init__(self, filepath, width=1024, height=1024):
         super(RasterTableSize, self).__init__(filepath)
+        self.si_width, self.si_height = width, height
+        self.width_slices = self._raster.width // self.si_width
+        self.height_slices = self._raster.height // self.si_height
+
+
+class RasterTableAligned(RasterTable):
+    """
+    The class creates a table, same as RasterTable and provides a functionality to align two GeoTiff files.
+    Allows to iterate over pair of two datasets, which are geografically aligned.
+
+    Attributes:
+        filepath1 (string): a path to first GeoTiff file,
+        filepath2 (string): a path to second GeoTiff file,
+        width_slices (uint): number of horizontal splits,
+        height_slices (uint): number of vertical splits.
+    """
+    
+    def __init__(self, filepath1, filepath2, width_slices=3, height_slices=3):
+        super(RasterTableAligned, self).__init__(filepath1, width_slices, height_slices)
+        self.aligned_filepath = filepath2
+        self._raster_2 = rasterio.open(self.aligned_filepath)
+
+    def get(self, x, y):
+        """
+        Returns a pair of window, first window and the second which is aligned to the first one.
+        Remeber that windows are indexed the same as arrays, that is starting form 0.
+        x - the row index of table,
+        y - the column index of table.
+        """
+        w1 = super(RasterTableAligned, self).get(x, y)
+        w2 = self.__get_aligned(w1)
+        w2.pos = (x, y)
+        return w1, w2
+
+    def get_raster(self):
+        return self._raster, self._raster_2
+
+    def __get_aligned(self, window):
+        bounds = self._raster.window_bounds(window.window)
+        rw = self._raster_2.window(*bounds)
+        xi, yi = window.pos
+        w_ = self._raster_2.width - rw.col_off
+        h_ = self._raster_2.height - rw.row_off
+        
+        if yi == (self.width_slices - 1) and w_ > 0:
+            rw = rWindow(rw.col_off, rw.row_off, w_, rw.height)
+        if xi == (self.height_slices - 1) and h_ > 0:
+            rw = rWindow(rw.col_off, rw.row_off, rw.width, h_)
+        if yi == (self.width_slices - 1) and (xi == self.height_slices - 1) and h_ > 0:
+            rw = rWindow(rw.col_off, rw.row_off, rw.width, h_)
+        if yi == (self.width_slices - 1) and (xi == self.height_slices - 1) and w_ > 0:
+            rw = rWindow(rw.col_off, rw.row_off, w_, rw.height)
+        if yi == (self.width_slices - 1) and (xi == self.height_slices - 1) and w_ > 0 and h_ > 0:
+            rw = rWindow(rw.col_off, rw.row_off, w_, h_)
+        return Window(
+            self._raster_2.read(1, window=rw, boundless=True, fill_value=0.), 
+            (0, 0), rw)
+
+
+class RasterTableSizeAligned(RasterTableAligned):
+    """
+    The same as RasterTableAligned but it defines splits by size (like RasterTableSize).
+
+    Attributes:
+        filepath1 (string): a path to first GeoTiff file,
+        filepath2 (string): a path to second GeoTiff file,
+        width (uint): a width of column in the table,
+        height (uint): a height of row in the table.
+    """
+    # TODO: use multiple inheritance...
+
+    def __init__(self, filepath1, filepath2, width=1024, height=1024):
+        super(RasterTableSizeAligned, self).__init__(filepath1, filepath2)
         self.si_width, self.si_height = width, height
         self.width_slices = self._raster.width // self.si_width
         self.height_slices = self._raster.height // self.si_height
