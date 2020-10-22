@@ -59,7 +59,7 @@ def upsize(img, n):
 def main(argc, argv):
 
     editor = AlignMapsEditor(in_files[0], in_files[2], (lat, lon))
-    cv2.waitKey()
+    editor.wait()
 
     # cmap = plt.cm.magma
     # with rasterio.open(in_files[0]) as humdata, rasterio.open(in_files[2]) as grid3:
