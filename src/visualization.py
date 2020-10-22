@@ -103,7 +103,7 @@ class AlignMapsEditor:
         self.lon = lon
         size = self.hg_img.shape
         cv2.putText(self.hg_img, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon), 
-            (10, self.hg_img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
+            (10, self.hg_img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1)
         cv2.imshow(self.window_name, self.hg_img)
         return 0
 
