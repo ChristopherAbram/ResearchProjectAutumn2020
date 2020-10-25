@@ -5,6 +5,8 @@ from shapely.geometry import box
 import pyperclip, time
 
 from utils.raster import get_window_geo
+from metrics import confusion_matrix
+import matplotlib.pyplot as plt
 
 
 class AlignMapsEditor:
@@ -30,6 +32,7 @@ class AlignMapsEditor:
         self.humdata_path = humdata_path
         self.grid3_path = grid3_path
         self.window_name = "align_humdata_and_grid3"
+        self.window_name_1 = "align_humdata_and_grid3_1"
         self.lat = location[0]
         self.lon = location[1]
         self.box_spread = 0.05
@@ -38,10 +41,13 @@ class AlignMapsEditor:
         self.b = (0,0)
         self.map_size = None
         self.hg_img = None
+        self.ra12 = None
 
         cv2.namedWindow(self.window_name)
-        cv2.createTrackbar("zoom", self.window_name, 1, 100, self.update_zoom)
+        cv2.namedWindow(self.window_name_1)
+        cv2.createTrackbar("zoom out", self.window_name, 1, 100, self.update_zoom)
         cv2.setMouseCallback(self.window_name, self.drag_update)
+        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2)
         self.update_zoom(3)
 
     def make_grid(self, out_shape, size_vertical, size_horizontal, thicc=1):
@@ -123,6 +129,7 @@ class AlignMapsEditor:
         return 0
 
     def wait(self):
+        # plt.show()
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == 27:
@@ -154,6 +161,12 @@ class AlignMapsEditor:
             h_data[np.where(h_data > 0)] = 255
             h_data = h_data.astype(np.uint8)
             g_data = g_data * 255
+            g_data = g_data.astype(np.uint8)
+
+            ra1, ra2 = confusion_matrix(h_data, g_data, 3)
+            self.ra12 = np.hstack((ra1, ra2))
+            cv2.imshow(self.window_name_1, self.ra12)
+
             self.h_data = cv2.merge((h_data, np.zeros(h_data.shape, dtype=np.uint8), h_data))
             self.g_data = cv2.merge((g_data, g_data, np.zeros(g_data.shape, dtype=np.uint8)))
 
