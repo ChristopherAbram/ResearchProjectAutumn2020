@@ -6,6 +6,7 @@ import pyperclip, time
 
 from utils.raster import get_window_geo
 from metrics import confusion_matrix
+from utils.image import *
 import matplotlib.pyplot as plt
 
 
@@ -58,14 +59,6 @@ class AlignMapsEditor:
         for x in range(0, width - 1, size_horizontal):
             cv2.line(grid, (0, x), (width, x), (255, 255, 255), thicc, 1)
         return grid
-
-    def convolve(self, img_in, img_out, kernel, stride):
-        for i in range(img_in.shape[0] // stride):
-            for j in range(img_in.shape[1] // stride):
-                img_out[i,j] = np.sum(\
-                                img_in[i*stride:i*stride+stride, j*stride:j*stride+stride] *\
-                                kernel)
-        return img_out
 
     def drag_update(self, event, x, y, flags, param):
         dv = 10
@@ -157,11 +150,8 @@ class AlignMapsEditor:
             g_data = grid3.read(1, window=g_window)
 
             # Preprocess data:
-            h_data = np.nan_to_num(h_data)
-            h_data[np.where(h_data > 0)] = 255
-            h_data = h_data.astype(np.uint8)
-            g_data = g_data * 255
-            g_data = g_data.astype(np.uint8)
+            h_data = humdata2visualization(h_data)
+            g_data = grid2visualization(g_data)
 
             ra1, ra2 = confusion_matrix(h_data, g_data, 3)
             self.ra12 = np.hstack((ra1, ra2))
@@ -178,9 +168,7 @@ class AlignMapsEditor:
                 maptype='satellite'
             )
 
-        ggl_img = g.get_vardata()
-        ggl_img = ggl_img * 255
-        ggl_img = ggl_img.astype(np.uint8)
+        ggl_img = googlemaps2visualization(g)
         self.map_size = ggl_img.shape
 
         # TODO: Perhaps more sophasticated method should be used...
@@ -188,8 +176,8 @@ class AlignMapsEditor:
         # that is, for some cases it returns the same image for slightly different bbox regardless change in box_spread value.
         # Also, google maps doesn't use the same projection:
         # https://gis.stackexchange.com/questions/48949/epsg-3857-or-4326-for-googlemaps-openstreetmap-and-leaflet 
-        h_d = cv2.resize(self.h_data, (ggl_img.shape[1], ggl_img.shape[0]), interpolation=cv2.INTER_AREA)
-        g_d = cv2.resize(self.g_data, (ggl_img.shape[1], ggl_img.shape[0]), interpolation=cv2.INTER_AREA)
+        h_d = resize(self.h_data, (ggl_img.shape[1], ggl_img.shape[0]), interpolation=cv2.INTER_AREA)
+        g_d = resize(self.g_data, (ggl_img.shape[1], ggl_img.shape[0]), interpolation=cv2.INTER_AREA)
 
         # add alpha and overlap
         alpha = 0.8
