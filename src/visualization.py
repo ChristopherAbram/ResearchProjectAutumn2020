@@ -38,6 +38,7 @@ class AlignMapsEditor:
         self.grid3_path = grid3_path
         self.window_name = "align_humdata_and_grid3"
         self.window_name_1 = "align_humdata_and_grid3_1"
+        self.window_name_2 = "hg_compared"
         self.lat = location[0]
         self.lon = location[1]
         self.box_spread = 0.05
@@ -50,6 +51,7 @@ class AlignMapsEditor:
 
         cv2.namedWindow(self.window_name)
         cv2.namedWindow(self.window_name_1)
+        cv2.namedWindow(self.window_name_2)
         cv2.createTrackbar("zoom out", self.window_name, 1, 100, self.update_zoom)
         cv2.setMouseCallback(self.window_name, self.drag_update)
         self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2)
@@ -155,12 +157,20 @@ class AlignMapsEditor:
             data_second_win = data2.read(1, window=second_window)
             data_second_win = data_second_win.astype(np.uint8)
             # Preprocess data:
+            h_data_binary = humdata2binary(h_data)
+            g_data_binary = grid2binary(g_data)
             h_data = humdata2visualization(h_data)
             g_data = grid2visualization(g_data)
 
-            ra1, ra2 = confusion_matrix(h_data, g_data, 3)
-            self.ra12 = np.hstack((ra1, ra2))
+            res, res_th, ra1, ra2 = confusion_matrix(h_data_binary, g_data_binary, threshold=0.5)
+            self.ra12 = np.hstack((ra1 * 255, ra2 * 255))
             cv2.imshow(self.window_name_1, self.ra12)
+
+            res =  (res * 255).astype(np.uint8)
+            res_th =  (res_th * 255).astype(np.uint8)
+            res = resize(res, (100, 100))
+            res_th = resize(res_th, (100, 100))
+            cv2.imshow(self.window_name_2, np.hstack((res, res_th)))
 
             self.h_data = cv2.merge((h_data, np.zeros(h_data.shape, dtype=np.uint8), h_data))
             self.g_data = cv2.merge((g_data, g_data, np.zeros(g_data.shape, dtype=np.uint8)))

@@ -30,6 +30,9 @@ def convolve2D(image, kernel, padding=(0,0), strides=(1,1)):
 def resize(image, size, interpolation=cv2.INTER_AREA):
     return cv2.resize(image, size, interpolation=interpolation)
 
+def resize_by_factor(image, factor=1, interpolation=cv2.INTER_AREA):
+    return cv2.resize(image, (image.shape[1] * factor, image.shape[0] * factor), interpolation=interpolation)
+
 def humdata2binary(image):
     """Takes a raw humdata frame and returns a binary representation, 
     i.e. ones for places where there is nonzero value in original array, zero otherwise"""
