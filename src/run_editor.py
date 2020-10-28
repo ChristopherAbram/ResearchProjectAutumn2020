@@ -1,5 +1,4 @@
-import os
-import sys
+import os, sys
 
 from utils.definitions import get_project_path
 from visualization import AlignMapsEditor
@@ -9,12 +8,9 @@ def main(argc, argv):
 
     country = 'NGA'
     in_files = [
-        os.path.join(get_project_path(), "data", "humdata",
-                     'population_%s_2018-10-01.tif' % country.lower()),
-        os.path.join(get_project_path(), "data", "worldpop",
-                     '%s_ppp_2015.tif' % country.lower()),
-        os.path.join(get_project_path(), "data", "grid3",
-                     '%s - population - v1.2 - mastergrid.tif' % country)
+        os.path.join(get_project_path(), "data", "humdata", 'population_%s_2018-10-01.tif' % country.lower()),
+        os.path.join(get_project_path(), "data", "worldpop", '%s_ppp_2015.tif' % country.lower()),
+        os.path.join(get_project_path(), "data", "grid3", '%s - population - v1.2 - mastergrid.tif' % country)
     ]
 
     # lat, lon = (6.541456, 3.312719)  # Lagos
@@ -22,7 +18,7 @@ def main(argc, argv):
     # lat, lon = (7.382932, 3.929635) # Ibadan
     # lat, lon = (4.850891, 6.993961) # Port Harcourt
 
-    editor = AlignMapsEditor(in_files[0], in_files[2], 'HUMDATA', 'GRID3', (lat, lon))
+    editor = AlignMapsEditor(in_files[0], in_files[2], (lat, lon))
     editor.wait()
 
     return 0

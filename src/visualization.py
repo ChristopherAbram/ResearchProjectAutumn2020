@@ -1,11 +1,8 @@
 import numpy as np
-import cv2
-import rasterio
-import salem
+import cv2, rasterio, salem
 from salem import get_demo_file, DataLevels, GoogleVisibleMap, Map, GoogleCenterMap
 from shapely.geometry import box
-import pyperclip
-import time
+import pyperclip, time
 
 from utils.raster import get_window_geo
 from metrics import confusion_matrix
@@ -16,12 +13,11 @@ from sklearn.metrics import ConfusionMatrixDisplay
 
 class AlignMapsEditor:
     """
-    Opens an interactive window which allows to visualize 2 different datasets(e.g. Humdata and GRID3)
-    aligned with Google Static Maps.
+    Opens an interactive window which allows to visualize Humdata and GRID3 aligned with Google Static Maps.
 
     Attributes:
-        data1_path (string): A path to the first GeoTiff file,
-        data2_path (string): A path to second GeoTiff file,
+        humdata_path (string): A path to humdata GeoTiff file,
+        grid3_path (string): A path to GRID3 GeoTiff file,
         location (tuple): A pair (lat, lon), location on the map.
 
     Interactions:
@@ -33,7 +29,7 @@ class AlignMapsEditor:
         Release left mouse button to stop dragging.
     """
 
-    def __init__(self, data1_path, data2_path, data1_name, data2_name, location):
+    def __init__(self, humdata_path, grid3_path, location):
 
         self.humdata_path = humdata_path
         self.grid3_path = grid3_path
@@ -46,7 +42,7 @@ class AlignMapsEditor:
         self.box_spread = 0.05
         self.zoom = 1
         self.is_dragging = False
-        self.b = (0, 0)
+        self.b = (0,0)
         self.map_size = None
         self.hg_img = None
         self.ra12 = None
@@ -75,7 +71,7 @@ class AlignMapsEditor:
             self.b = (x, y)
         elif event == cv2.EVENT_LBUTTONUP:
             self.is_dragging = False
-            self.b = (0, 0)
+            self.b = (0,0)
         elif event == cv2.EVENT_MOUSEMOVE:
             if self.is_dragging:
                 dx, dy = self.b[0] - x, y - self.b[1]
@@ -105,28 +101,27 @@ class AlignMapsEditor:
             return 1
         if lat is None or lon is None:
             return 1
-
+        
         self.lat = lat
         self.lon = lon
-        size = self.final_img.shape
-        cv2.putText(self.final_img, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon),
-                    (10, self.final_img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 1)
-        cv2.imshow(self.window_name, self.final_img)
+        size = self.hg_img.shape
+        cv2.putText(self.hg_img, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon), 
+            (10, self.hg_img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1)
+        cv2.imshow(self.window_name, self.hg_img)
         return 0
 
     def enable_search(self):
-        size = self.final_img.shape
-        cv2.rectangle(
-            self.final_img, (0, size[0] - 50), (size[0], size[0]), (255, 255, 255), -1)
-        cv2.imshow(self.window_name, self.final_img)
+        size = self.hg_img.shape
+        cv2.rectangle(self.hg_img, (0, size[0] - 50), (size[0], size[0]), (255,255,255), -1)
+        cv2.imshow(self.window_name, self.hg_img)
         while True:
             key = cv2.waitKey(0) & 0xFF
-            if key == 13:  # on enter escape the input mode
+            if key == 13: # on enter escape the input mode
                 self.update()
                 break
             elif key == 27:
                 return 1
-            elif key == ord('v'):  # allows to paste the text..
+            elif key == ord('v'): # allows to paste the text..
                 self.input_mode()
         return 0
 
@@ -151,15 +146,15 @@ class AlignMapsEditor:
 
     def update(self):
         box_spread = self.box_spread
-        with rasterio.open(self.data1_path) as data1, rasterio.open(self.data2_path) as data2:
+        with rasterio.open(self.humdata_path) as humdata, rasterio.open(self.grid3_path) as grid3:
 
-            data_first_win, first_window = get_window_geo(
-                data1, box(self.lon - box_spread, self.lat - box_spread,
+            h_data, h_window = get_window_geo(
+                humdata, box(self.lon - box_spread, self.lat - box_spread, 
                              self.lon + box_spread, self.lat + box_spread))
-            bounds = data1.window_bounds(first_window)
-            second_window = data2.window(*bounds)
-            data_second_win = data2.read(1, window=second_window)
-            data_second_win = data_second_win.astype(np.uint8)
+            bounds = humdata.window_bounds(h_window)
+            g_window = grid3.window(*bounds)
+            g_data = grid3.read(1, window=g_window)
+
             # Preprocess data:
             h_data_binary = humdata2binary(h_data)
             g_data_binary = grid2binary(g_data)
@@ -185,9 +180,7 @@ class AlignMapsEditor:
 
             cmd = ConfusionMatrixDisplay(cm, display_labels=['f', 't'])
             cmd = cmd.plot(ax=self.ax3)
-            # cmd.ax_.legend().remove()
-            cbar = self.fig.colorbar(cmd.im_, ax=cmd.ax_)
-            cbar.remove()
+            cmd.im_.colorbar.remove()
             plt.draw()
             # cv2.imshow(self.window_name_3, cm)
 
@@ -197,11 +190,11 @@ class AlignMapsEditor:
 
         crs = salem.gis.check_crs('epsg:4326')
         g = GoogleVisibleMap(x=[self.lon-box_spread, self.lon+box_spread], y=[self.lat-box_spread, self.lat+box_spread],
-                             size_x=640, size_y=640,
-                             crs='epsg:4326',
-                             scale=1,
-                             maptype='satellite'
-                             )
+                size_x = 640, size_y = 640, 
+                crs='epsg:4326',
+                scale=1,
+                maptype='satellite'
+            )
 
         ggl_img = googlemaps2visualization(g)
         self.map_size = ggl_img.shape
@@ -216,46 +209,38 @@ class AlignMapsEditor:
 
         # add alpha and overlap
         alpha = 0.8
-        gg_d1_img = cv2.addWeighted(ggl_img, alpha, d1, 1.-alpha, 0.0)
-        gg_d2_img = cv2.addWeighted(ggl_img, alpha, d2, 1.-alpha, 0.0)
+        gg_h_img = cv2.addWeighted(ggl_img, alpha, h_d, 1.-alpha, 0.0)
+        gg_g_img = cv2.addWeighted(ggl_img, alpha, g_d, 1.-alpha, 0.0)
 
         # add grid
         if self.zoom < 5:
-            ratio_d1_d2 = 3
-            grid_d1_outer = self.make_grid(gg_d1_img.shape,
-                                          ggl_img.shape[0] // self.data_first_win.shape[0] *
-                                          ratio_d1_d2,
-                                          ggl_img.shape[1] // self.data_first_win.shape[1] *
-                                          ratio_d1_d2,
-                                          thicc=1)
-            grid_d1_inner = self.make_grid(gg_d1_img.shape,
-                                          ggl_img.shape[0] // self.data_first_win.shape[0],
-                                          ggl_img.shape[1] // self.data_first_win.shape[1],
-                                          thicc=1)
-            grid_d2 = self.make_grid(gg_d2_img.shape,
-                                    ggl_img.shape[0] // self.data_second_win.shape[0],
-                                    ggl_img.shape[1] // self.data_second_win.shape[1],
-                                    thicc=1)
+            ratio_g_h = 3
+            grid_h_outer = self.make_grid(gg_h_img.shape,\
+                                            ggl_img.shape[0] // self.h_data.shape[0] * ratio_g_h,\
+                                            ggl_img.shape[1] // self.h_data.shape[1] * ratio_g_h,\
+                                            thicc=1)
+            grid_h_inner = self.make_grid(gg_h_img.shape,\
+                                            ggl_img.shape[0] // self.h_data.shape[0],\
+                                            ggl_img.shape[1] // self.h_data.shape[1],\
+                                            thicc = 1)
+            grid_g = self.make_grid(gg_g_img.shape,\
+                                            ggl_img.shape[0] // self.g_data.shape[0],\
+                                            ggl_img.shape[1] // self.g_data.shape[1],\
+                                            thicc = 1)
 
             alpha = 0.8
-            gg_d1_img = cv2.addWeighted(
-                gg_d1_img, alpha, grid_d1_inner, 1-alpha, 0.0)
-            gg_d1_img = cv2.addWeighted(
-                gg_d1_img, alpha, grid_d1_outer, 1-alpha, 0.0)
-            gg_d2_img = cv2.addWeighted(gg_d2_img, alpha, grid_d2, 1-alpha, 0.0)
+            gg_h_img = cv2.addWeighted(gg_h_img, alpha, grid_h_inner, 1-alpha, 0.0)
+            gg_h_img = cv2.addWeighted(gg_h_img, alpha, grid_h_outer, 1-alpha, 0.0)
+            gg_g_img = cv2.addWeighted(gg_g_img, alpha, grid_g, 1-alpha, 0.0)
 
         # horizontally stack two images
-        self.final_img = np.hstack((gg_d1_img, gg_d2_img))
+        self.hg_img = np.hstack((gg_h_img, gg_g_img))
 
-        cv2.putText(self.final_img, self.data1_name, (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
-        cv2.putText(self.final_img, self.data1_name, (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 1)
-        cv2.putText(self.final_img, self.data2_name,
-                    (gg_d1_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
-        cv2.putText(self.final_img, self.data2_name,
-                    (gg_d1_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 1)
-        cv2.putText(self.final_img, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon),
-                    (10, self.final_img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(self.hg_img, 'HUMDATA', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 3)
+        cv2.putText(self.hg_img, 'HUMDATA', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,255), 1)
+        cv2.putText(self.hg_img, 'GRID3', (gg_h_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 3)
+        cv2.putText(self.hg_img, 'GRID3', (gg_h_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,0), 1)
+        cv2.putText(self.hg_img, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon), 
+            (10, self.hg_img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
 
-        cv2.imshow(self.window_name, self.final_img)
+        cv2.imshow(self.window_name, self.hg_img)

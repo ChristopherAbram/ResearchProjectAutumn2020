@@ -29,3 +29,4 @@ def confusion_matrix(array1, array2, threshold, sfactor=1):
     ground_truth_flat = array2.ravel()
     cmatrix = sklearn.metrics.confusion_matrix(ground_truth_flat, result_flat)
     return result, result_th, cmatrix, ra1, ra2
+
