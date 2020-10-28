@@ -8,6 +8,9 @@ import pyperclip
 import time
 
 from utils.raster import get_window_geo
+from metrics import confusion_matrix
+from utils.image import *
+import matplotlib.pyplot as plt
 
 
 class AlignMapsEditor:
@@ -31,11 +34,10 @@ class AlignMapsEditor:
 
     def __init__(self, data1_path, data2_path, data1_name, data2_name, location):
 
-        self.data1_path = data1_path
-        self.data2_path = data2_path
-        self.data1_name = data1_name
-        self.data2_name = data2_name
-        self.window_name = "aligning {0} and {1}".format(data1_name, data2_name)
+        self.humdata_path = humdata_path
+        self.grid3_path = grid3_path
+        self.window_name = "align_humdata_and_grid3"
+        self.window_name_1 = "align_humdata_and_grid3_1"
         self.lat = location[0]
         self.lon = location[1]
         self.box_spread = 0.05
@@ -43,11 +45,14 @@ class AlignMapsEditor:
         self.is_dragging = False
         self.b = (0, 0)
         self.map_size = None
-        self.final_img = None
+        self.hg_img = None
+        self.ra12 = None
 
         cv2.namedWindow(self.window_name)
-        cv2.createTrackbar("zoom", self.window_name, 1, 100, self.update_zoom)
+        cv2.namedWindow(self.window_name_1)
+        cv2.createTrackbar("zoom out", self.window_name, 1, 100, self.update_zoom)
         cv2.setMouseCallback(self.window_name, self.drag_update)
+        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2)
         self.update_zoom(3)
 
     def make_grid(self, out_shape, size_vertical, size_horizontal, thicc=1):
@@ -58,14 +63,6 @@ class AlignMapsEditor:
         for x in range(0, width - 1, size_horizontal):
             cv2.line(grid, (0, x), (width, x), (255, 255, 255), thicc, 1)
         return grid
-
-    def convolve(self, img_in, img_out, kernel, stride):
-        for i in range(img_in.shape[0] // stride):
-            for j in range(img_in.shape[1] // stride):
-                img_out[i, j] = np.sum(
-                    img_in[i*stride:i*stride+stride, j*stride:j*stride+stride] *
-                    kernel)
-        return img_out
 
     def drag_update(self, event, x, y, flags, param):
         dv = 10
@@ -130,6 +127,7 @@ class AlignMapsEditor:
         return 0
 
     def wait(self):
+        # plt.show()
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == 27:
@@ -157,14 +155,15 @@ class AlignMapsEditor:
             data_second_win = data2.read(1, window=second_window)
             data_second_win = data_second_win.astype(np.uint8)
             # Preprocess data:
-            data_first_win = np.nan_to_num(data_first_win)
-            data_first_win[np.where(data_first_win > 0)] = 255
-            data_first_win = data_first_win.astype(np.uint8)
-            data_second_win = data_second_win * 255
-            self.data_first_win = cv2.merge(
-                (data_first_win, np.zeros(data_first_win.shape, dtype=np.uint8), data_first_win))
-            self.data_second_win = cv2.merge(
-                (data_second_win, data_second_win, np.zeros(data_second_win.shape, dtype=np.uint8)))
+            h_data = humdata2visualization(h_data)
+            g_data = grid2visualization(g_data)
+
+            ra1, ra2 = confusion_matrix(h_data, g_data, 3)
+            self.ra12 = np.hstack((ra1, ra2))
+            cv2.imshow(self.window_name_1, self.ra12)
+
+            self.h_data = cv2.merge((h_data, np.zeros(h_data.shape, dtype=np.uint8), h_data))
+            self.g_data = cv2.merge((g_data, g_data, np.zeros(g_data.shape, dtype=np.uint8)))
 
         crs = salem.gis.check_crs('epsg:4326')
         g = GoogleVisibleMap(x=[self.lon-box_spread, self.lon+box_spread], y=[self.lat-box_spread, self.lat+box_spread],
@@ -174,20 +173,16 @@ class AlignMapsEditor:
                              maptype='satellite'
                              )
 
-        ggl_img = g.get_vardata()
-        ggl_img = ggl_img * 255
-        ggl_img = ggl_img.astype(np.uint8)
+        ggl_img = googlemaps2visualization(g)
         self.map_size = ggl_img.shape
 
         # TODO: Perhaps more sophasticated method should be used...
         # It doesn't align google maps well... It seems that google api doesn't return different bboxes depending on box_spread value.
         # that is, for some cases it returns the same image for slightly different bbox regardless change in box_spread value.
         # Also, google maps doesn't use the same projection:
-        # https://gis.stackexchange.com/questions/48949/epsg-3857-or-4326-for-googlemaps-openstreetmap-and-leaflet
-        d1 = cv2.resize(
-            self.data_first_win, (ggl_img.shape[1], ggl_img.shape[0]), interpolation=cv2.INTER_AREA)
-        d2 = cv2.resize(
-            self.data_second_win, (ggl_img.shape[1], ggl_img.shape[0]), interpolation=cv2.INTER_AREA)
+        # https://gis.stackexchange.com/questions/48949/epsg-3857-or-4326-for-googlemaps-openstreetmap-and-leaflet 
+        h_d = resize(self.h_data, (ggl_img.shape[1], ggl_img.shape[0]), interpolation=cv2.INTER_AREA)
+        g_d = resize(self.g_data, (ggl_img.shape[1], ggl_img.shape[0]), interpolation=cv2.INTER_AREA)
 
         # add alpha and overlap
         alpha = 0.8

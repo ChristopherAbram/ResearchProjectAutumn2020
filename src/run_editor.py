@@ -17,10 +17,10 @@ def main(argc, argv):
                      '%s - population - v1.2 - mastergrid.tif' % country)
     ]
 
-    #lat, lon = (6.541456, 3.312719)  # Lagos
+    # lat, lon = (6.541456, 3.312719)  # Lagos
     lat, lon = (8.499714, 3.423570) # Ago-Are
-    #lat, lon = (7.382932, 3.929635) # Ibadan
-    #lat, lon = (4.850891, 6.993961) # Port Harcourt
+    # lat, lon = (7.382932, 3.929635) # Ibadan
+    # lat, lon = (4.850891, 6.993961) # Port Harcourt
 
     editor = AlignMapsEditor(in_files[0], in_files[2], 'HUMDATA', 'GRID3', (lat, lon))
     editor.wait()
