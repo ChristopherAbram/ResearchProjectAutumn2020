@@ -8,6 +8,7 @@ from utils.raster import get_window_geo
 from metrics import confusion_matrix
 from utils.image import *
 import matplotlib.pyplot as plt
+from sklearn.metrics import ConfusionMatrixDisplay
 
 
 class AlignMapsEditor:
@@ -35,6 +36,7 @@ class AlignMapsEditor:
         self.window_name = "align_humdata_and_grid3"
         self.window_name_1 = "align_humdata_and_grid3_1"
         self.window_name_2 = "hg_compared"
+        # self.window_name_3 = "confusion_matrix"
         self.lat = location[0]
         self.lon = location[1]
         self.box_spread = 0.05
@@ -46,11 +48,11 @@ class AlignMapsEditor:
         self.ra12 = None
 
         cv2.namedWindow(self.window_name)
-        cv2.namedWindow(self.window_name_1)
-        cv2.namedWindow(self.window_name_2)
+        # cv2.namedWindow(self.window_name_1)
+        # cv2.namedWindow(self.window_name_2)
         cv2.createTrackbar("zoom out", self.window_name, 1, 100, self.update_zoom)
         cv2.setMouseCallback(self.window_name, self.drag_update)
-        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2)
+        self.fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = plt.subplots(2, 2)
         self.update_zoom(3)
 
     def make_grid(self, out_shape, size_vertical, size_horizontal, thicc=1):
@@ -124,7 +126,9 @@ class AlignMapsEditor:
         return 0
 
     def wait(self):
-        # plt.show()
+        plt.ion()
+        plt.show()
+        # plt.close()
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == 27:
@@ -157,15 +161,31 @@ class AlignMapsEditor:
             h_data = humdata2visualization(h_data)
             g_data = grid2visualization(g_data)
 
-            res, res_th, ra1, ra2 = confusion_matrix(h_data_binary, g_data_binary, threshold=0.5)
+            res, res_th, cm, ra1, ra2 = confusion_matrix(h_data_binary, g_data_binary, threshold=0.5)
             self.ra12 = np.hstack((ra1 * 255, ra2 * 255))
-            cv2.imshow(self.window_name_1, self.ra12)
+            # cv2.imshow(self.window_name_1, self.ra12)
 
             res =  (res * 255).astype(np.uint8)
             res_th =  (res_th * 255).astype(np.uint8)
-            res = resize(res, (100, 100))
-            res_th = resize(res_th, (100, 100))
-            cv2.imshow(self.window_name_2, np.hstack((res, res_th)))
+            res = resize(res, (500, 500))
+            res_th = resize(res_th, (500, 500))
+
+            # cv2.imshow(self.window_name_2, np.hstack((res, res_th)))
+            self.ax1.cla()
+            self.ax2.cla()
+            self.ax3.cla()
+
+            self.ax1.imshow(res, cmap='gray')
+            self.ax2.imshow(res_th, cmap='gray')
+
+            cmd = ConfusionMatrixDisplay(cm, display_labels=['f', 't'])
+            cmd = cmd.plot(ax=self.ax3)
+            # cmd.ax_.legend().remove()
+            cbar = self.fig.colorbar(cmd.im_, ax=cmd.ax_)
+            cbar.remove()
+            plt.draw()
+            # cv2.imshow(self.window_name_3, cm)
+
 
             self.h_data = cv2.merge((h_data, np.zeros(h_data.shape, dtype=np.uint8), h_data))
             self.g_data = cv2.merge((g_data, g_data, np.zeros(g_data.shape, dtype=np.uint8)))
