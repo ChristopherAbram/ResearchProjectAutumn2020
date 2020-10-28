@@ -16,7 +16,7 @@ class AlignMapsEditor:
     Opens an interactive window which allows to visualize Humdata and GRID3 aligned with Google Static Maps.
 
     Attributes:
-        humdata_path (string): A path to humdata GeoTiff file,
+        hrsl_path (string): A path to humdata GeoTiff file,
         grid3_path (string): A path to GRID3 GeoTiff file,
         location (tuple): A pair (lat, lon), location on the map.
 
@@ -29,9 +29,9 @@ class AlignMapsEditor:
         Release left mouse button to stop dragging.
     """
 
-    def __init__(self, humdata_path, grid3_path, location):
+    def __init__(self, hrsl_path, grid3_path, location):
 
-        self.humdata_path = humdata_path
+        self.hrsl_path = hrsl_path # high resoultion settlement layer from FB
         self.grid3_path = grid3_path
         self.window_name = "align_humdata_and_grid3"
         self.window_name_1 = "align_humdata_and_grid3_1"
@@ -44,7 +44,7 @@ class AlignMapsEditor:
         self.is_dragging = False
         self.b = (0,0)
         self.map_size = None
-        self.hg_img = None
+        self.images_combined = None
         self.ra12 = None
 
         cv2.namedWindow(self.window_name)
@@ -86,6 +86,7 @@ class AlignMapsEditor:
                     self.update()
 
     def input_mode(self):
+        """Used for pasting the coordinates to be searched in the window."""
         err_msg = "Wrong input! Give input in following format: [lat], [lon]"
         text = pyperclip.paste()
         print("Paste: '{}'".format(text))
@@ -104,16 +105,16 @@ class AlignMapsEditor:
         
         self.lat = lat
         self.lon = lon
-        size = self.hg_img.shape
-        cv2.putText(self.hg_img, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon), 
-            (10, self.hg_img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 1)
-        cv2.imshow(self.window_name, self.hg_img)
+        size = self.images_combined.shape
+        cv2.putText(self.images_combined, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon),
+                    (10, self.images_combined.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 1)
+        cv2.imshow(self.window_name, self.images_combined)
         return 0
 
     def enable_search(self):
-        size = self.hg_img.shape
-        cv2.rectangle(self.hg_img, (0, size[0] - 50), (size[0], size[0]), (255,255,255), -1)
-        cv2.imshow(self.window_name, self.hg_img)
+        size = self.images_combined.shape
+        cv2.rectangle(self.images_combined, (0, size[0] - 50), (size[0], size[0]), (255, 255, 255), -1)
+        cv2.imshow(self.window_name, self.images_combined)
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == 13: # on enter escape the input mode
@@ -145,21 +146,20 @@ class AlignMapsEditor:
         self.update()
 
     def update(self):
-        box_spread = self.box_spread
-        with rasterio.open(self.humdata_path) as humdata, rasterio.open(self.grid3_path) as grid3:
+        with rasterio.open(self.hrsl_path) as hrsl_file, rasterio.open(self.grid3_path) as grid3_file:
 
-            h_data, h_window = get_window_geo(
-                humdata, box(self.lon - box_spread, self.lat - box_spread, 
-                             self.lon + box_spread, self.lat + box_spread))
-            bounds = humdata.window_bounds(h_window)
-            g_window = grid3.window(*bounds)
-            g_data = grid3.read(1, window=g_window)
+            hrsl_data, hrsl_window = get_window_geo(
+                hrsl_file, box(self.lon - self.box_spread, self.lat - self.box_spread,
+                             self.lon + self.box_spread, self.lat + self.box_spread))
+            bounds = hrsl_file.window_bounds(hrsl_window)
+            grid3_window = grid3_file.window(*bounds)
+            grid3_data = grid3_file.read(1, window=grid3_window)
 
             # Preprocess data:
-            h_data_binary = humdata2binary(h_data)
-            g_data_binary = grid2binary(g_data)
-            h_data = humdata2visualization(h_data)
-            g_data = grid2visualization(g_data)
+            h_data_binary = humdata2binary(hrsl_data)
+            g_data_binary = grid2binary(grid3_data)
+            hrsl_data = humdata2visualization(hrsl_data)
+            grid3_data = grid2visualization(grid3_data)
 
             res, res_th, cm, ra1, ra2 = confusion_matrix(h_data_binary, g_data_binary, threshold=0.5)
             self.ra12 = np.hstack((ra1 * 255, ra2 * 255))
@@ -185,48 +185,50 @@ class AlignMapsEditor:
             # cv2.imshow(self.window_name_3, cm)
 
 
-            self.h_data = cv2.merge((h_data, np.zeros(h_data.shape, dtype=np.uint8), h_data))
-            self.g_data = cv2.merge((g_data, g_data, np.zeros(g_data.shape, dtype=np.uint8)))
+            self.hrsl_data = cv2.merge((hrsl_data, np.zeros(hrsl_data.shape, dtype=np.uint8), hrsl_data))
+            self.grid3_data = cv2.merge((grid3_data, grid3_data, np.zeros(grid3_data.shape, dtype=np.uint8)))
 
         crs = salem.gis.check_crs('epsg:4326')
-        g = GoogleVisibleMap(x=[self.lon-box_spread, self.lon+box_spread], y=[self.lat-box_spread, self.lat+box_spread],
-                size_x = 640, size_y = 640, 
-                crs='epsg:4326',
-                scale=1,
-                maptype='satellite'
-            )
+        g = GoogleVisibleMap(
+            x=[self.lon-self.box_spread, self.lon+self.box_spread],
+            y=[self.lat-self.box_spread, self.lat+self.box_spread],
+            size_x = 640, size_y = 640,
+            crs='epsg:4326',
+            scale=1,
+            maptype='satellite'
+        )
 
-        ggl_img = googlemaps2visualization(g)
-        self.map_size = ggl_img.shape
+        googlemaps_image = googlemaps2visualization(g)
+        self.map_size = googlemaps_image.shape
 
         # TODO: Perhaps more sophasticated method should be used...
-        # It doesn't align google maps well... It seems that google api doesn't return different bboxes depending on box_spread value.
-        # that is, for some cases it returns the same image for slightly different bbox regardless change in box_spread value.
+        # It doesn't align google maps well... It seems that google api doesn't return different bboxes depending on self.box_spread value.
+        # that is, for some cases it returns the same image for slightly different bbox regardless change in self.box_spread value.
         # Also, google maps doesn't use the same projection:
         # https://gis.stackexchange.com/questions/48949/epsg-3857-or-4326-for-googlemaps-openstreetmap-and-leaflet 
-        h_d = resize(self.h_data, (ggl_img.shape[1], ggl_img.shape[0]), interpolation=cv2.INTER_AREA)
-        g_d = resize(self.g_data, (ggl_img.shape[1], ggl_img.shape[0]), interpolation=cv2.INTER_AREA)
+        h_d = resize(self.hrsl_data, (googlemaps_image.shape[1], googlemaps_image.shape[0]), interpolation=cv2.INTER_AREA)
+        g_d = resize(self.grid3_data, (googlemaps_image.shape[1], googlemaps_image.shape[0]), interpolation=cv2.INTER_AREA)
 
         # add alpha and overlap
         alpha = 0.8
-        gg_h_img = cv2.addWeighted(ggl_img, alpha, h_d, 1.-alpha, 0.0)
-        gg_g_img = cv2.addWeighted(ggl_img, alpha, g_d, 1.-alpha, 0.0)
+        gg_h_img = cv2.addWeighted(googlemaps_image, alpha, h_d, 1.-alpha, 0.0)
+        gg_g_img = cv2.addWeighted(googlemaps_image, alpha, g_d, 1.-alpha, 0.0)
 
         # add grid
         if self.zoom < 5:
             ratio_g_h = 3
-            grid_h_outer = self.make_grid(gg_h_img.shape,\
-                                            ggl_img.shape[0] // self.h_data.shape[0] * ratio_g_h,\
-                                            ggl_img.shape[1] // self.h_data.shape[1] * ratio_g_h,\
-                                            thicc=1)
-            grid_h_inner = self.make_grid(gg_h_img.shape,\
-                                            ggl_img.shape[0] // self.h_data.shape[0],\
-                                            ggl_img.shape[1] // self.h_data.shape[1],\
-                                            thicc = 1)
-            grid_g = self.make_grid(gg_g_img.shape,\
-                                            ggl_img.shape[0] // self.g_data.shape[0],\
-                                            ggl_img.shape[1] // self.g_data.shape[1],\
-                                            thicc = 1)
+            grid_h_outer = self.make_grid(gg_h_img.shape, \
+                                          googlemaps_image.shape[0] // self.hrsl_data.shape[0] * ratio_g_h, \
+                                          googlemaps_image.shape[1] // self.hrsl_data.shape[1] * ratio_g_h, \
+                                          thicc=1)
+            grid_h_inner = self.make_grid(gg_h_img.shape, \
+                                          googlemaps_image.shape[0] // self.hrsl_data.shape[0], \
+                                          googlemaps_image.shape[1] // self.hrsl_data.shape[1], \
+                                          thicc = 1)
+            grid_g = self.make_grid(gg_g_img.shape, \
+                                    googlemaps_image.shape[0] // self.grid3_data.shape[0], \
+                                    googlemaps_image.shape[1] // self.grid3_data.shape[1], \
+                                    thicc = 1)
 
             alpha = 0.8
             gg_h_img = cv2.addWeighted(gg_h_img, alpha, grid_h_inner, 1-alpha, 0.0)
@@ -234,13 +236,13 @@ class AlignMapsEditor:
             gg_g_img = cv2.addWeighted(gg_g_img, alpha, grid_g, 1-alpha, 0.0)
 
         # horizontally stack two images
-        self.hg_img = np.hstack((gg_h_img, gg_g_img))
+        self.images_combined = np.hstack((gg_h_img, gg_g_img))
 
-        cv2.putText(self.hg_img, 'HUMDATA', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 3)
-        cv2.putText(self.hg_img, 'HUMDATA', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,255), 1)
-        cv2.putText(self.hg_img, 'GRID3', (gg_h_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 3)
-        cv2.putText(self.hg_img, 'GRID3', (gg_h_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,0), 1)
-        cv2.putText(self.hg_img, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon), 
-            (10, self.hg_img.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
+        cv2.putText(self.images_combined, 'HUMDATA', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
+        cv2.putText(self.images_combined, 'HUMDATA', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 1)
+        cv2.putText(self.images_combined, 'GRID3', (gg_h_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
+        cv2.putText(self.images_combined, 'GRID3', (gg_h_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 1)
+        cv2.putText(self.images_combined, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon),
+                    (10, self.images_combined.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
-        cv2.imshow(self.window_name, self.hg_img)
+        cv2.imshow(self.window_name, self.images_combined)
