@@ -2,7 +2,6 @@ import numpy as np
 import cv2
 from utils.image import resize, convolve2D
 import sklearn.metrics
-from sklearn.metrics import ConfusionMatrixDisplay
 
 
 def confusion_matrix(array1, array2, threshold, sfactor=1):
@@ -20,18 +19,13 @@ def confusion_matrix(array1, array2, threshold, sfactor=1):
     ra1 = resize(array1, (cwidth, cheight), interpolation=cv2.INTER_AREA)
     ra2 = resize(array2, (cwidth, cheight), interpolation=cv2.INTER_AREA)
 
-    # kw, kh = 0, 0
-    # if width1 > width2:
     kw, kh = int(cwidth / (width2 * sfactor)), int(cheight / (height2 * sfactor))
-    # else:
-        # kw, kh = cwidth / (width1 * sfactor), cheight / (height1 * sfactor)
 
     kernel = 1. / (kw * kh) * np.ones((kw, kh), dtype=np.float32)
     result = convolve2D(ra1, kernel, strides=(kh, kw))
     result_th = cv2.threshold(result, threshold, 1.0, cv2.THRESH_BINARY)[1]
 
-    result_flat = result_th.ravel()
+    result_flat = result_th.ravel() 
     ground_truth_flat = array2.ravel()
     cmatrix = sklearn.metrics.confusion_matrix(ground_truth_flat, result_flat)
-
-    return result, result_th, ra1, ra2
+    return result, result_th, cmatrix, ra1, ra2
