@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 from utils.image import convolve2D
-import sklearn.metrics
+from sklearn import metrics
 
 
 def make_comparable(predicted, truth):
@@ -52,9 +52,24 @@ def confusion_matrix(hrsl_binary, grid3_binary, threshold, products=True):
     convolved = convolve2D(hrsl_resized, kernel, strides=kernel_shape)
     hrsl_resized_thresholded = cv2.threshold(\
         convolved, thresh=threshold, maxval=1.0, type=cv2.THRESH_BINARY)[1]
-    cm = sklearn.metrics.confusion_matrix(grid3_binary.ravel(), hrsl_resized_thresholded.ravel())
+    cm = metrics.confusion_matrix(grid3_binary.ravel(), hrsl_resized_thresholded.ravel())
     cm = np.array([[cm[1,1], cm[0,1]], [cm[1,0], cm[0,0]]]) # just for interpretability and debugging..
     if products:
         return cm, convolved, (hrsl_resized_thresholded, grid3_resized)
     else:
         return cm
+
+def compute_metrics(hrsl_binary, grid3_binary, threshold):
+    hrsl_resized, grid3_resized, kernel_shape = make_comparable(hrsl_binary, grid3_binary)
+    kernel = make_kernel(kernel_shape)
+    convolved = convolve2D(hrsl_resized, kernel, strides=kernel_shape)
+    hrsl_resized_thresholded = cv2.threshold(\
+        convolved, thresh=threshold, maxval=1.0, type=cv2.THRESH_BINARY)[1]
+    g2r, h2r = grid3_binary.ravel(), hrsl_resized_thresholded.ravel()
+    cm = metrics.confusion_matrix(g2r, h2r)
+    cm = np.array([[cm[1,1], cm[0,1]], [cm[1,0], cm[0,0]]]) # just for interpretability and debugging..
+    accuracy = metrics.accuracy_score(g2r, h2r)
+    recall = metrics.recall_score(g2r, h2r)
+    precision = metrics.precision_score(g2r, h2r)
+    f1 = metrics.f1_score(g2r, h2r)
+    return cm, accuracy, recall, precision, f1

@@ -5,7 +5,7 @@ from shapely.geometry import box
 import pyperclip, time
 
 from utils.raster import get_window_geo
-from metrics import confusion_matrix
+from metrics import confusion_matrix, compute_metrics
 from utils.image import *
 import matplotlib.pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay
@@ -46,7 +46,7 @@ class AlignMapsEditor:
         cv2.namedWindow(self.window_name)
         cv2.createTrackbar("zoom out", self.window_name, 1, 100, self.update_zoom)
         cv2.setMouseCallback(self.window_name, self.drag_update)
-        self.fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = plt.subplots(2, 2)
+        self.fig, ((self.ax1, self.ax2), (self.ax3, self.ax4), (self.ax5, self.ax6)) = plt.subplots(3, 2, figsize=(6, 9))
         self.update_zoom(3)
 
     def make_grid(self, out_shape, size_vertical, size_horizontal, thicc=1):
@@ -228,10 +228,14 @@ class AlignMapsEditor:
         # compare the two datasets and get confusion matrix
         cm, convolution_product, (hrsl_thresholded, grid3_resized) = \
             confusion_matrix(hrsl_binary, grid3_binary, 0.5, products=True)
+        cm, accuracy, recall, precision, f1 = compute_metrics(hrsl_binary, grid3_binary, 0.5)
 
         self.ax1.cla()
         self.ax2.cla()
         self.ax3.cla()
+        self.ax4.cla()
+        self.ax5.cla()
+        self.ax6.cla()
 
         self.ax1.imshow((hrsl_thresholded * 255).astype(np.uint8), cmap='gray')
         self.ax1.set_title('HRSL resized and thresholded')
@@ -241,8 +245,17 @@ class AlignMapsEditor:
         cmd = ConfusionMatrixDisplay(cm, display_labels=['t', 'f'])
         cmd = cmd.plot(ax=self.ax4)
         cmd.im_.colorbar.remove()
-        plt.draw()
         
         self.ax3.imshow((convolution_product * 255).astype(np.uint8), cmap='gray')
         self.ax3.set_title('HRSL processing product')
+
+        # Draw a table:
+        columns = ('Metric', 'Value')
+        rows = ['Accuracy', 'Recall', 'Precision', 'F1 Score']
+        cell_text = [[l, '%1.4f' % m] for (l, m) in zip(rows, [accuracy, recall, precision, f1])]
+        t = self.ax5.table(cellText=cell_text, rowLabels=None, colLabels=columns, loc='center', fontsize=14)
+        t.scale(1., 1.3)
+        self.ax5.get_xaxis().set_visible(False)
+        self.ax5.get_yaxis().set_visible(False)
+        plt.draw()
 
