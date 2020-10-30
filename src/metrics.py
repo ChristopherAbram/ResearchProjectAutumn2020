@@ -53,7 +53,7 @@ def confusion_matrix(hrsl_binary, grid3_binary, threshold, products=True):
     hrsl_resized_thresholded = cv2.threshold(\
         convolved, thresh=threshold, maxval=1.0, type=cv2.THRESH_BINARY)[1]
     cm = metrics.confusion_matrix(grid3_binary.ravel(), hrsl_resized_thresholded.ravel())
-    cm = np.array([[cm[1,1], cm[0,1]], [cm[1,0], cm[0,0]]]) # just for interpretability and debugging..
+    cm = np.array([[cm[1,1], cm[1,0]], [cm[0,1], cm[0,0]]]) # just for interpretability and debugging..
     if products:
         return cm, convolved, (hrsl_resized_thresholded, grid3_resized)
     else:
@@ -67,7 +67,7 @@ def compute_metrics(hrsl_binary, grid3_binary, threshold):
         convolved, thresh=threshold, maxval=1.0, type=cv2.THRESH_BINARY)[1]
     g2r, h2r = grid3_binary.ravel(), hrsl_resized_thresholded.ravel()
     cm = metrics.confusion_matrix(g2r, h2r)
-    cm = np.array([[cm[1,1], cm[0,1]], [cm[1,0], cm[0,0]]]) # just for interpretability and debugging..
+    cm = np.array([[cm[1,1], cm[1,0]], [cm[0,1], cm[0,0]]]) # just for interpretability and debugging..
     accuracy = metrics.accuracy_score(g2r, h2r)
     recall = metrics.recall_score(g2r, h2r)
     precision = metrics.precision_score(g2r, h2r)
