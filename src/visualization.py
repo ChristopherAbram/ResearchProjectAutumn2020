@@ -50,8 +50,14 @@ class AlignMapsEditor:
         cv2.setMouseCallback(self.window_name, self.drag_update)
 
         self.fig, ((self.ax1, self.ax2), (self.ax3, self.ax4), (self.ax5, self.ax6)) = plt.subplots(3, 2, figsize=(6, 9))
-        self.thresh_slider = Slider(self.ax6, 'Threshold', 0.0, 1.0, valinit=0.5, valstep=0.1)
-        # self.fig.canvas.set_window_title(self.window_name_1)
+        axcolor = 'lightgoldenrodyellow'
+        self.thresh_ax = plt.axes([0.1, 0.05, 0.8, 0.03], facecolor=axcolor)
+        self.thresh_slider = Slider(self.thresh_ax, 'Threshold', 0.0, 1.0, valinit=0.5, valstep=0.1)
+        self.fig.canvas.set_window_title(self.window_name_1)
+        self.fig.canvas.draw_idle()
+        self.thresh_slider.on_changed(self.on_threshold_update)
+        self.raw_hrsl_data = None
+        self.raw_grid3_data = None
         # self.fig.set_size_inches(10, 10)
         self.update_zoom(3)
 
@@ -147,17 +153,15 @@ class AlignMapsEditor:
 
     def update(self):
         with rasterio.open(self.hrsl_path) as hrsl_file, rasterio.open(self.grid3_path) as grid3_file:
-            hrsl_data, hrsl_window = get_window_geo(
+            self.raw_hrsl_data, hrsl_window = get_window_geo(
                 hrsl_file, box(self.lon - self.box_spread, self.lat - self.box_spread,
                              self.lon + self.box_spread, self.lat + self.box_spread))
             bounds = hrsl_file.window_bounds(hrsl_window)
             grid3_window = grid3_file.window(*bounds)
-            grid3_data = grid3_file.read(1, window=grid3_window)
-            self.visualize_maps(hrsl_data, grid3_data)
+            self.raw_grid3_data = grid3_file.read(1, window=grid3_window)
+            self.visualize_maps(self.raw_hrsl_data, self.raw_grid3_data)
             
-    
     def visualize_maps(self, hrsl_data, grid3_data):
-
         # compare the two datasets and get confusion matrix
         self.plot_products(hrsl_data, grid3_data, 0.5)
 
@@ -226,7 +230,6 @@ class AlignMapsEditor:
                     (10, self.images_combined.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         cv2.imshow(self.window_name, self.images_combined)
 
-
     def compute_products(self, hrsl_data, grid3_data, threshold):
         hrsl_binary = humdata2binary(hrsl_data)
         grid3_binary = grid2binary(grid3_data)
@@ -236,7 +239,6 @@ class AlignMapsEditor:
         cm, accuracy, recall, precision, f1 = compute_metrics(hrsl_binary, grid3_binary, threshold)
 
         return cm, convolution_product, (hrsl_thresholded, grid3_resized), (accuracy, recall, precision, f1)
-
 
     def plot_products(self, hrsl_data, grid3_data, threshold):
         cm, convolution_product, (hrsl_thresholded, grid3_resized), (accuracy, recall, precision, f1) = \
@@ -269,10 +271,8 @@ class AlignMapsEditor:
         t.scale(1., 1.3)
         self.ax5.get_xaxis().set_visible(False)
         self.ax5.get_yaxis().set_visible(False)
-
-        def on_threshold_update(threshold):
-            self.plot_products(hrsl_data, grid3_data, threshold)
-            self.fig.canvas.draw_idle()
-
-        self.thresh_slider.on_changed(on_threshold_update)
         plt.draw()
+
+    def on_threshold_update(self, threshold):
+        self.plot_products(self.raw_hrsl_data, self.raw_grid3_data, threshold)
+        self.fig.canvas.draw_idle()
