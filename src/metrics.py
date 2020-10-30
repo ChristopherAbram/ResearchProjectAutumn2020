@@ -14,9 +14,22 @@ def make_comparable(predicted, truth):
     """
     predicted_height, predicted_width = predicted.shape
     truth_height, truth_width = truth.shape
+    # Account for small differences in sizes
+    # This implementation assumes square kernels and square inputs
+    if predicted_height > predicted_width:
+        padded = np.zeros((predicted_height, predicted_height), dtype=predicted.dtype)
+        padded[:,:predicted_width] = predicted
+        predicted_height, predicted_width = padded.shape
+    elif predicted_height < predicted_width:
+        padded = np.zeros((predicted_width, predicted_width), dtype=predicted.dtype)
+        padded[:predicted_height,:] = predicted
+        predicted_height, predicted_width = padded.shape
+    else:
+        padded = predicted
+        
     common_height = np.lcm(predicted_height, truth_height)
     common_width = np.lcm(predicted_width, truth_width)
-    predicted_resized = cv2.resize(predicted, (common_width, common_height), interpolation=cv2.INTER_AREA)
+    predicted_resized = cv2.resize(padded, (common_width, common_height), interpolation=cv2.INTER_AREA)
     truth_resized = cv2.resize(truth, (common_width, common_height), interpolation=cv2.INTER_AREA)
     kernel_shape = (int(common_height / truth_height), int(common_width / truth_width))
     return predicted_resized, truth_resized, kernel_shape
