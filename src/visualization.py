@@ -233,16 +233,16 @@ class AlignMapsEditor:
         self.ax2.cla()
         self.ax3.cla()
 
-        self.ax1.imshow(grid3_data, cmap='gray')
-        self.ax1.set_title('GRID3 original')
-        self.ax2.imshow((hrsl_thresholded * 255).astype(np.uint8), cmap='gray')
-        self.ax2.set_title('HRSL resized and thresholded')
+        self.ax1.imshow((hrsl_thresholded * 255).astype(np.uint8), cmap='gray')
+        self.ax1.set_title('HRSL resized and thresholded')
+        self.ax2.imshow(grid3_data, cmap='gray')
+        self.ax2.set_title('GRID3 original')
         
         cmd = ConfusionMatrixDisplay(cm, display_labels=['t', 'f'])
-        cmd = cmd.plot(ax=self.ax3)
+        cmd = cmd.plot(ax=self.ax4)
         cmd.im_.colorbar.remove()
         plt.draw()
         
-        self.ax4.imshow((convolution_product * 255).astype(np.uint8), cmap='gray')
-        self.ax4.set_title('HRSL processing product')
+        self.ax3.imshow((convolution_product * 255).astype(np.uint8), cmap='gray')
+        self.ax3.set_title('HRSL processing product')
 
