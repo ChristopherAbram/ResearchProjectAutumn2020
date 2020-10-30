@@ -34,6 +34,7 @@ class AlignMapsEditor:
         self.hrsl_path = hrsl_path # high resoultion settlement layer from FB
         self.grid3_path = grid3_path
         self.window_name = "align_humdata_and_grid3"
+        self.window_name_1 = "Visualize metrics"
         self.lat = location[0]
         self.lon = location[1]
         self.box_spread = 0.05
@@ -46,7 +47,10 @@ class AlignMapsEditor:
         cv2.namedWindow(self.window_name)
         cv2.createTrackbar("zoom out", self.window_name, 1, 100, self.update_zoom)
         cv2.setMouseCallback(self.window_name, self.drag_update)
+
         self.fig, ((self.ax1, self.ax2), (self.ax3, self.ax4), (self.ax5, self.ax6)) = plt.subplots(3, 2, figsize=(6, 9))
+        self.fig.canvas.set_window_title(self.window_name_1)
+        # self.fig.set_size_inches(10, 10)
         self.update_zoom(3)
 
     def make_grid(self, out_shape, size_vertical, size_horizontal, thicc=1):
@@ -219,16 +223,18 @@ class AlignMapsEditor:
         cv2.putText(self.images_combined, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon),
                     (10, self.images_combined.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         cv2.imshow(self.window_name, self.images_combined)
-
-
+        
     def compute_and_plot_products(self, hrsl_data, grid3_data):
         hrsl_binary = humdata2binary(hrsl_data)
         grid3_binary = grid2binary(grid3_data)
 
         # compare the two datasets and get confusion matrix
+        CONVOLUTION_TRESHOLD = 0.5
+        CT_OPTIMISTIC = 0.1
+        CT_PESIMISTIC = 0.9
         cm, convolution_product, (hrsl_thresholded, grid3_resized) = \
-            confusion_matrix(hrsl_binary, grid3_binary, 0.5, products=True)
-        cm, accuracy, recall, precision, f1 = compute_metrics(hrsl_binary, grid3_binary, 0.5)
+            confusion_matrix(hrsl_binary, grid3_binary, CONVOLUTION_TRESHOLD, products=True)
+        cm, accuracy, recall, precision, f1 = compute_metrics(hrsl_binary, grid3_binary, CONVOLUTION_TRESHOLD)
 
         self.ax1.cla()
         self.ax2.cla()
@@ -242,12 +248,12 @@ class AlignMapsEditor:
         self.ax2.imshow(grid3_data, cmap='gray')
         self.ax2.set_title('GRID3 original')
         
+        self.ax3.imshow((convolution_product * 255).astype(np.uint8), cmap='gray')
+        self.ax3.set_title('HRSL processing product')
+
         cmd = ConfusionMatrixDisplay(cm, display_labels=['t', 'f'])
         cmd = cmd.plot(ax=self.ax4)
         cmd.im_.colorbar.remove()
-        
-        self.ax3.imshow((convolution_product * 255).astype(np.uint8), cmap='gray')
-        self.ax3.set_title('HRSL processing product')
 
         # Draw a table:
         columns = ('Metric', 'Value')
@@ -258,4 +264,3 @@ class AlignMapsEditor:
         self.ax5.get_xaxis().set_visible(False)
         self.ax5.get_yaxis().set_visible(False)
         plt.draw()
-
