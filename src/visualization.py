@@ -5,10 +5,10 @@ from shapely.geometry import box
 import pyperclip, time
 
 from utils.raster import get_window_geo
-from metrics import confusion_matrix
+from metrics import make_comparable, make_kernel
 from utils.image import *
 import matplotlib.pyplot as plt
-from sklearn.metrics import ConfusionMatrixDisplay
+import sklearn.metrics
 
 
 class AlignMapsEditor:
@@ -45,7 +45,6 @@ class AlignMapsEditor:
         self.b = (0,0)
         self.map_size = None
         self.images_combined = None
-        self.ra12 = None
 
         cv2.namedWindow(self.window_name)
         # cv2.namedWindow(self.window_name_1)
@@ -155,36 +154,38 @@ class AlignMapsEditor:
             grid3_window = grid3_file.window(*bounds)
             grid3_data = grid3_file.read(1, window=grid3_window)
 
-            # Preprocess data:
-            h_data_binary = humdata2binary(hrsl_data)
-            g_data_binary = grid2binary(grid3_data)
+            # make binary and then map {0,1} to {0,255}
+            hrsl_binary = humdata2binary(hrsl_data)
+            grid3_binary = grid2binary(grid3_data)
             hrsl_data = humdata2visualization(hrsl_data)
             grid3_data = grid2visualization(grid3_data)
 
-            res, res_th, cm, ra1, ra2 = confusion_matrix(h_data_binary, g_data_binary, threshold=0.5)
-            self.ra12 = np.hstack((ra1 * 255, ra2 * 255))
-            # cv2.imshow(self.window_name_1, self.ra12)
+            # compare the two datasets and get confusion matrix
+            hrsl_resized, grid3_resized, kernel_shape = make_comparable(hrsl_binary, grid3_binary)
+            kernel = make_kernel(kernel_shape)
+            hrsl_resized_thresholded = cv2.threshold(\
+                                        convolve2D(hrsl_resized, kernel, strides=kernel_shape),\
+                                        thresh=0.5,\
+                                        maxval=1.0,\
+                                        type=cv2.THRESH_BINARY)[1]
+            confusion_matrix = sklearn.metrics.confusion_matrix(grid3_binary.ravel(), hrsl_resized_thresholded.ravel())
 
-            res =  (res * 255).astype(np.uint8)
-            res_th =  (res_th * 255).astype(np.uint8)
-            res = resize(res, (500, 500))
-            res_th = resize(res_th, (500, 500))
-
-            # cv2.imshow(self.window_name_2, np.hstack((res, res_th)))
+            # display comparison
             self.ax1.cla()
             self.ax2.cla()
             self.ax3.cla()
 
-            self.ax1.imshow(res, cmap='gray')
-            self.ax2.imshow(res_th, cmap='gray')
+            self.ax1.imshow((hrsl_resized_thresholded * 255).astype(np.uint8), cmap='gray')
+            self.ax1.set_title('HRSL resized and thresholded')
+            self.ax2.imshow(grid3_data, cmap='gray')
+            self.ax2.set_title('GRID3 original')
 
-            cmd = ConfusionMatrixDisplay(cm, display_labels=['f', 't'])
+            cmd = sklearn.metrics.ConfusionMatrixDisplay(confusion_matrix, display_labels=['f', 't'])
             cmd = cmd.plot(ax=self.ax3)
             cmd.im_.colorbar.remove()
             plt.draw()
-            # cv2.imshow(self.window_name_3, cm)
 
-
+            # update the images to be displayed overlayed on satellite image
             self.hrsl_data = cv2.merge((hrsl_data, np.zeros(hrsl_data.shape, dtype=np.uint8), hrsl_data))
             self.grid3_data = cv2.merge((grid3_data, grid3_data, np.zeros(grid3_data.shape, dtype=np.uint8)))
 
