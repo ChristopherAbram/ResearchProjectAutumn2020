@@ -37,18 +37,46 @@
     \pagenumbering{arabic}
 
     \section*{Abstract}
-        \lipsum[1-1]
+        Write abstract last.
 
-    this is a reference \cite[see][figure 3]{FB-paper}
-
-    this is a reference \cite{HRSL-dataset}
-
-    this is a reference \cite{grid3-dataset}
+    %this is a reference \cite[see][figure 3]{FB-paper}
+    %this is a reference \cite{HRSL-dataset}
+    %this is a reference \cite{grid3-dataset}
 
     \section{Motivation}
-    Here we want to identify, define and delimit a problem within information technology.
+    %Here we want to identify, define and delimit a problem within information technology.
 
-    \lipsum[1-1]
+    Accurately identifying and mapping inhabited areas, and deriving human settlement maps therefrom, is critical
+    for humanitarian operations. For example, natural catastrophe risk analysis and efficient planning of vaccination
+    campaigns both depend heavily on availability of high-resolution human settlement maps. As the manual process
+    of constructing these maps is very costly, and in particular unfeasible for large remote areas that are sparsely
+    populated, remote sensing with satellite imagery offers a feasible way to approximate the maps.
+
+    Recent advances in artificial intelligence and price drops in the cost of high-resolution satellite imagery
+    have opened possibilities for deriving detailed populations maps from satellite imagery using deep learning frameworks.
+    However, while current AI and machine learning algorithms are known to produce satisfactory results in
+    classifying well known patterns of settlement areas, it is still a huge challenge to accurately identify
+    human settlement patterns in rural and remote areas, and for developing countries where the most vulnerable
+    populations live.
+
+    One possible reason for this phenomenon might be the distribution of the data that is used to train the model
+    in question. For instance, one would expect the performance of a model trained exclusively on images of buildings
+    that are of concrete-brick make, to decrease when evaluated also on tin-roofed buildings.
+    Another reason might be the presence of both natural and human-made artifacts such as rock formations or boats,
+    which introduce a deterministic source of misclassification.
+
+    The former is of particular significance for developing countries; for instance one study estimates that
+    on average in Sub-Saharan Africa (excluding South Africa), in rural areas, only around 45\% of houses were made
+    of finished materials\footnote{for example, finished floor materials include parquet, vinyl, ceramic tiles, cement
+    and carpet, whereas natural or rudimentary floor materials include earth, sand, dung, wood planks, palm and bamboo}
+    \cite[see][Table 1 and Table S1 in supplementary]{Tusting2019}.
+
+    Since the make of a building is strongly correlated to the development level of an area, this study attempts to
+    asses if one such human settlement map, constructed by deep learning from satellite imagery, contains biases
+    related to socio-economic factors. A conclusive result would better inform any party that takes action based off of
+    that particular dataset and possibly quantify the uncertainty with which one should read the different areas of
+    the map.
+
 
     \section{Introduction}
     Here we want to identify and analyse relevant means for solving the problem, such as academic theories, methods, literature, tools and other sources, as well as existing solutions to the problem.
