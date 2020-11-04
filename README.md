@@ -48,10 +48,10 @@ mkdir ../out
 To generate pdf run
 ```bash
 # cwd = report
-pdflatex --output-directory ../out report
+pdflatex --output-directory ../out/ report
 ```
 If references have changed, also need to run
 ```bash
-biber ../input-directory --output-directory ../out report
+biber --input-directory ../out/ --output-directory ../out/ report
 ```
 Put all the images in report/images.
