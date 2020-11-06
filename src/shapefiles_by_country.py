@@ -11,7 +11,7 @@ from utils.definitions import get_project_path
 def get_shapes(country_of_interest='Nigeria'):
     """
     Extracts shapes of admin 1 level for a given country.
-
+    Shapes source SHDI shape files(maps)
     Returns regions, a dictionary where key=GDLcode(e.g. NGAr101)
     and value=shape geometry(e.g. shapely.geometry.multipolygon.MultiPolygon or Polygon)
     """

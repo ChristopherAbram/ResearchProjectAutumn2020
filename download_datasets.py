@@ -11,7 +11,9 @@ datasets = {
     'worldpop':
         ['ftp://ftp.worldpop.org.uk/GIS/Population/Global_2000_2020/2015/NGA/nga_ppp_2015.tif'],
     'grid3':
-        ['https://s3-eu-west-1.amazonaws.com/files.grid3.gov.ng/pop/GRID3+-+NGA+-+National+Population+Data+-+v1.2.zip']
+        ['https://s3-eu-west-1.amazonaws.com/files.grid3.gov.ng/pop/GRID3+-+NGA+-+National+Population+Data+-+v1.2.zip'],
+    'shapefiles':
+        ['https://globaldatalab.org/assets/2020/03/GDL%20Shapefiles%20V4.zip']
     }
 
 script_path = os.path.dirname(os.path.abspath(__file__))
@@ -43,4 +45,4 @@ for dirname, urls in datasets.items():
         if url.endswith('.zip'):
             with zipfile.ZipFile(os.path.join(current_path, filename), 'r') as zip_ref:
                 zip_ref.extractall(current_path)
-            #os.remove(os.path.join(current_path, filename))
+            os.remove(os.path.join(current_path, filename))
