@@ -22,9 +22,9 @@ with fiona.open(shapefile_path) as shapes:
     for gdl_code, geo in regions.items():
          
          
-        print(gdl_code)
+        # print(gdl_code)
         shapely_geometry = shape(geo)
-        print(type(shapely_geometry))
+        # print(type(shapely_geometry))
         if(isinstance(shapely_geometry, shapely.geometry.multipolygon.MultiPolygon)):
             fig, axs = plt.subplots()
             fig.suptitle(gdl_code)

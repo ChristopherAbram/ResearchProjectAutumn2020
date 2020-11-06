@@ -9,6 +9,12 @@ from utils.definitions import get_project_path
 
 
 def get_shapes(country_of_interest='Nigeria'):
+    """
+    Extracts shapes of admin 1 level for a given country.
+
+    Returns regions, a dictionary where key=GDLcode(e.g. NGAr101)
+    and value=shape geometry(e.g. shapely.geometry.multipolygon.MultiPolygon or Polygon)
+    """
     shapefile_name = 'GDL Shapefiles V4.shp' # all the countries in the world
     shapefile_path = os.path.join(get_project_path(), 'data/shapefiles', shapefile_name)
 
@@ -22,6 +28,11 @@ def get_shapes(country_of_interest='Nigeria'):
     return regions
 
 def plot_shapes(regions):
+    """
+    Plots all the shapes of a country (all the regions).
+    Some regions have more than one shape(e.g. region which includes islands)
+    and in that case we get MultiPolygon instead of just one Polygon.
+    """
     for gdl_code, geo in regions.items():
         shapely_geometry = shape(geo)
         if(isinstance(shapely_geometry, shapely.geometry.multipolygon.MultiPolygon)):
