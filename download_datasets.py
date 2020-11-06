@@ -4,16 +4,9 @@ import requests
 import shutil
 import urllib.request as request
 from contextlib import closing
+from utils.definitions import get_datasets_uri
 
-datasets = {
-    'humdata':
-        ['https://data.humdata.org/dataset/62ec6c48-2f23-476b-8c1e-e924ad79908d/resource/ec1ac1b2-616e-43a7-ba8c-29eaf3479f24/download/population_nga_2018-10-01.zip'],
-    'worldpop':
-        ['ftp://ftp.worldpop.org.uk/GIS/Population/Global_2000_2020/2015/NGA/nga_ppp_2015.tif'],
-    'grid3':
-        ['https://s3-eu-west-1.amazonaws.com/files.grid3.gov.ng/pop/GRID3+-+NGA+-+National+Population+Data+-+v1.2.zip']
-    }
-
+datasets = get_datasets_uri()
 script_path = os.path.dirname(os.path.abspath(__file__))
 
 for dirname, urls in datasets.items():
