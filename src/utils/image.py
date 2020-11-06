@@ -75,6 +75,15 @@ def grid2visualization(image, binary=True):
     img = img * 255
     return img
 
+def normalized2visualization(image, lower=0., upper=1.):
+    img = image.copy()
+    img[img > upper] = 0
+    img = img - lower
+    img[img < 0] = 0
+    scale = 1. / (upper - lower)
+    img = (img * scale * 255).astype(np.uint8)
+    return img
+
 def googlemaps2visualization(g):
     img = g.get_vardata()
     img = img * 255
