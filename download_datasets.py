@@ -36,4 +36,5 @@ for dirname, urls in datasets.items():
         if url.endswith('.zip'):
             with zipfile.ZipFile(os.path.join(current_path, filename), 'r') as zip_ref:
                 zip_ref.extractall(current_path)
-            #os.remove(os.path.join(current_path, filename))
+            
+            os.remove(os.path.join(current_path, filename))
