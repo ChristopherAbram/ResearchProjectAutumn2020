@@ -28,7 +28,7 @@ conda env update --file environment.yml
 
 Set the `PYTHONPATH` to the repo (module setup):
 ```bash
-export PYTHONPATH="$PYTHONPATH:<location-of-project>/ResearchProjectAutumn2020/src:<location-of-project>/ResearchProjectAutumn2020:<location-of-project>/ResearchProjectAutumn2020/test"
+export PYTHONPATH="$PYTHONPATH:<location-of-project>/ResearchProjectAutumn2020/humset:<location-of-project>/ResearchProjectAutumn2020:<location-of-project>/ResearchProjectAutumn2020/test"
 ```
 
 # Tests
