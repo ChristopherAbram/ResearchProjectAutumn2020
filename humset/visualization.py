@@ -8,9 +8,9 @@ from matplotlib.colors import LogNorm
 from matplotlib.widgets import Slider
 from sklearn.metrics import ConfusionMatrixDisplay
 
-from utils.raster import get_window_geo
-from metrics import confusion_matrix, compute_metrics
-from utils.image import *
+from humset.utils.raster import get_window_geo
+from humset.metrics import confusion_matrix, compute_metrics
+from humset.utils.image import *
 
 
 class AlignMapsEditor:

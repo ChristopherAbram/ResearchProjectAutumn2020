@@ -1,7 +1,7 @@
 import sys, os
 
-from utils.definitions import get_project_path, get_dataset_paths
-from metrics import RasterTableScheduler
+from humset.utils.definitions import get_project_path, get_dataset_paths
+from humset.metrics import RasterTableScheduler
 
 
 def main(argc, argv):
@@ -12,7 +12,7 @@ def main(argc, argv):
     #     'grid3': os.path.join(get_project_path(), 'data', 'out', 'example_grid3.tif')
     # }
 
-    patch_size = 30
+    patch_size = 600
     thresholds = [0.2, 0.5, 0.8]
     threads = 12
 

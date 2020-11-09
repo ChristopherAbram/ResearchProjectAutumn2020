@@ -11,9 +11,9 @@ from shapely.geometry import box
 from matplotlib.colors import LogNorm
 from utils.location import GeoLocation
 
-from utils.definitions import get_project_path
-from utils.raster import RasterTable, RasterTableSize, get_window_px, get_window_geo
-from visualization import AlignMapsEditor
+from humset.utils.definitions import get_project_path
+from humset.utils.raster import RasterTable, RasterTableSize, get_window_px, get_window_geo
+from humset.visualization import AlignMapsEditor
 
 ### PARAMS ###
 country = 'NGA'

@@ -7,9 +7,9 @@ import threading
 import logging
 import rasterio
 
-from utils.definitions import get_project_path, get_dataset_paths
-from utils.raster import RasterTableSizeAligned
-from utils.image import *
+from humset.utils.definitions import get_project_path, get_dataset_paths
+from humset.utils.raster import RasterTableSizeAligned
+from humset.utils.image import *
 
 
 logging.basicConfig(
@@ -162,7 +162,10 @@ class MetricsWorker(threading.Thread):
 
 class RasterTableScheduler:
 
-    def __init__(self, hrsl_path, grid3_path, patch_size, threshold, n_threads=12, fake=False):
+    def __init__(self, 
+        hrsl_path, grid3_path, patch_size, threshold, 
+        n_threads=12, fake=False, worker_class=MetricsWorker):
+        
         self.table = RasterTableSizeAligned(hrsl_path, grid3_path, patch_size, patch_size)
         self.hrsl_path = hrsl_path
         self.grid3_path = grid3_path
@@ -173,6 +176,7 @@ class RasterTableScheduler:
         self.hrsl_path_thread = []
         self.grid3_path_thread = []
         self.fake = fake
+        self.worker_class = worker_class
 
     def split_thread_indexes(self):
         """
@@ -182,6 +186,8 @@ class RasterTableScheduler:
         n_table_rows, n_table_cols = self.table.height_slices, self.table.width_slices
         rows_per_thread = int(np.ceil(n_table_rows / self.n_threads))
         rows_per_thread_last = n_table_rows - (self.n_threads - 1) * rows_per_thread
+        logging.info("Total number of patches '%d'" % (n_table_rows * n_table_cols))
+        logging.info("Number of patches per thread '%d'" % (rows_per_thread * n_table_cols))
         indexes = []
         for tix in range(self.n_threads - 1):
             indexes.append(((tix * rows_per_thread, 0), ((tix + 1) * rows_per_thread - 1, n_table_cols - 1)))
@@ -213,7 +219,7 @@ class RasterTableScheduler:
         # Metrics storage:
         # tp, fp, fn, tn, accuracy, recall, precision, f1
         n_table_rows, n_table_cols = self.table.height_slices, self.table.width_slices
-        self.metrics = np.zeros((n_table_rows, n_table_cols, 8))
+        self.metrics = np.zeros((self.table.get_raster()[1].height, self.table.get_raster()[1].width, 8))
         
         indexes = self.split_thread_indexes()
         self.__before()
@@ -221,7 +227,7 @@ class RasterTableScheduler:
         # Init, start and join threads:
         threads = []
         for tix in range(self.n_threads):
-            threads.append(MetricsWorker(
+            threads.append(self.worker_class(
                 result_storage=self.metrics,
                 args=indexes[tix],
                 kwargs={

@@ -11,7 +11,7 @@ from shapely.geometry import box
 from salem import get_demo_file, DataLevels, GoogleVisibleMap, Map
 import json
 
-from utils.definitions import get_project_path
+from humset.utils.definitions import get_project_path
 
 
 def main(argc, argv):

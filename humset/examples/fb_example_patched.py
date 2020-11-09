@@ -11,7 +11,7 @@ import rasterio.mask as mask
 from shapely.geometry import box
 import json
 
-from utils.definitions import get_project_path
+from humset.utils.definitions import get_project_path
 
 
 def main(argc, argv):

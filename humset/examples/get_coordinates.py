@@ -1,4 +1,4 @@
-from utils.location import GeoLocation
+from humset.utils.location import GeoLocation
 
 
 # list of strings

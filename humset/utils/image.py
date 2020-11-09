@@ -36,10 +36,10 @@ def resize_by_factor(image, factor=1, interpolation=cv2.INTER_AREA):
 def humdata2binary(image):
     """Takes a raw humdata frame and returns a binary representation, 
     i.e. ones for places where there is nonzero value in original array, zero otherwise"""
-    img = image.copy()
-    img = np.nan_to_num(img)
-    img[np.where(img > 0)] = 1
-    return img.astype(np.uint8)
+    # img = image.copy()
+    image = np.nan_to_num(image)
+    image[np.where(image > 0)] = 1
+    return image.astype(np.uint8)
 
 def humdata2visualization(image, binary=True):
     """

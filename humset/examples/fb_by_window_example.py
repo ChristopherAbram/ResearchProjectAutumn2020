@@ -7,17 +7,13 @@ from matplotlib.colors import LogNorm
 import rasterio
 from rasterio.windows import Window
 
-from utils.definitions import get_project_path
-from utils.raster import RasterTable, RasterTableSize, RasterTableAligned
+from humset.utils.definitions import get_dataset_paths, get_project_path
+from humset.utils.raster import RasterTable, RasterTableSize, RasterTableAligned
 
 
 def main(argc, argv):
 
-    country = 'NGA'
-    in_file = os.path.join(
-        get_project_path(), "data", "humdata", 'population_%s_2018-10-01.tif' % country.lower())
-    grid3_in = os.path.join(get_project_path(), "data", "grid3", 'NGA - population - v1.2 - mastergrid.tif')
-
+    in_files = get_dataset_paths('NGA')
     cmap = plt.cm.magma
 
     # Generate samples tiffs
@@ -57,18 +53,24 @@ def main(argc, argv):
 
     # Read by window size, 5000 X 3000 px
     # Note: The sizes around edge will differ from given size. You can get these values from (width, height)
-    # table = RasterTableSize(in_file, 5000, 3000)
-    # for window in table:
-    #     fig, ax = plt.subplots()
-    #     ax.imshow(window.data, cmap=cmap, norm=LogNorm())
-    #     plt.show()
+    table = RasterTableSize(in_files['humdata'], 2000, 1000)
+    for window in table:
+        fig, ax = plt.subplots()
+        ax.imshow(window.data, cmap=cmap, norm=LogNorm())
+        plt.show()
 
-    table = RasterTableAligned(in_file, grid3_in, 10, 10)
+    table = RasterTableAligned(in_files['humdata'], in_files['grid3'], 10, 10)
     for w_hum, w_grid3 in table:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15 ,10))
         ax1.imshow(w_hum.data, cmap=cmap, norm=LogNorm())
         w_grid3.data = w_grid3.data * 255
         ax2.imshow(w_grid3.data, cmap='gray')
+        plt.show()
+
+    table = RasterTable(os.path.join(get_project_path(), 'data', 'out', 'nga_metrics.tif'), 1, 1, index=1)
+    for window in table:
+        fig, ax = plt.subplots()
+        ax.imshow(window.data, cmap=cmap, norm=LogNorm())
         plt.show()
 
     return 0

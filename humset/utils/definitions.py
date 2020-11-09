@@ -20,4 +20,4 @@ def get_dataset_paths(country=None):
     return cd if country is None else cd[country]
 
 def get_memory_limit():
-    return 512 * 1024 * 1024 * 1024 # in bytes (0.5 GB)
+    return 1 * 1024 * 1024 * 1024 # in bytes (0.5 GB)

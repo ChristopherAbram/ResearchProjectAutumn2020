@@ -2,7 +2,7 @@ import sys
 import os
 import numpy as np
 
-from utils.definitions import get_project_path
+from humset.utils.definitions import get_project_path
 
 
 def main(argc, argv):
