@@ -2,12 +2,13 @@ import numpy as np
 import cv2, os, sys
 from utils.image import convolve2D
 from sklearn import metrics
+from abc import ABC, abstractmethod
 
 import threading
 import logging
 import rasterio
 
-from humset.utils.definitions import get_project_path, get_dataset_paths
+from humset.utils.definitions import get_project_path
 from humset.utils.raster import RasterTableSizeAligned
 from humset.utils.image import *
 
@@ -67,38 +68,71 @@ def make_kernel(kernel_shape):
     return kernel
 
 
-def confusion_matrix(hrsl_binary, grid3_binary, threshold, products=True):
-    hrsl_resized, grid3_resized, kernel_shape = make_comparable(hrsl_binary, grid3_binary)
-    kernel = make_kernel(kernel_shape)
-    convolved = convolve2D(hrsl_resized, kernel, strides=kernel_shape)
-    hrsl_resized_thresholded = cv2.threshold(\
-        convolved, thresh=threshold, maxval=1.0, type=cv2.THRESH_BINARY)[1]
-    cm = metrics.confusion_matrix(grid3_binary.ravel(), hrsl_resized_thresholded.ravel(), labels=[1, 0])
-    if products:
-        return cm, convolved, (hrsl_resized_thresholded, grid3_resized)
-    else:
-        return cm
+class Metrics(ABC):
+    @abstractmethod
+    def compute_metrics(self, hrsl_binary, grid3_binary, threshold):
+        pass
 
-def compute_metrics(hrsl_binary, grid3_binary, threshold):
-    hrsl_resized, grid3_resized, kernel_shape = make_comparable(hrsl_binary, grid3_binary)
-    kernel = make_kernel(kernel_shape)
-    convolved = convolve2D(hrsl_resized, kernel, strides=kernel_shape)
-    hrsl_resized_thresholded = cv2.threshold(\
-        convolved, thresh=threshold, maxval=1.0, type=cv2.THRESH_BINARY)[1]
-    grid3_binary = pad_to_square(grid3_binary) # in most cases doesn't change anything
-    g2r, h2r = grid3_binary.ravel(), hrsl_resized_thresholded.ravel()
-    cm = metrics.confusion_matrix(g2r, h2r, labels=[1, 0])
-    accuracy = metrics.accuracy_score(g2r, h2r)
-    recall = metrics.recall_score(g2r, h2r)
-    precision = metrics.precision_score(g2r, h2r)
-    f1 = metrics.f1_score(g2r, h2r)
-    return cm, accuracy, recall, precision, f1
+    @abstractmethod
+    def compute_metrics_view(self, hrsl_binary, grid3_binary, threshold):
+        pass
+
+
+class AggregatedMetrics(Metrics):
+
+    def __prepare(self, hrsl_binary, grid3_binary, threshold):
+        hrsl_resized, grid3_resized, kernel_shape = make_comparable(hrsl_binary, grid3_binary)
+        kernel = make_kernel(kernel_shape)
+        convolved = convolve2D(hrsl_resized, kernel, strides=kernel_shape)
+        hrsl_resized_thresholded = cv2.threshold(\
+            convolved, thresh=threshold, maxval=1.0, type=cv2.THRESH_BINARY)[1]
+        return hrsl_resized_thresholded, grid3_resized, convolved
+
+    def compute_metrics(self, hrsl_binary, grid3_binary, threshold):
+        hrsl_resized_thresholded, _, _ = self.__prepare(
+            hrsl_binary, grid3_binary, threshold)
+        
+        grid3_binary = pad_to_square(grid3_binary) # in most cases doesn't change anything
+        g2r, h2r = grid3_binary.ravel(), hrsl_resized_thresholded.ravel()
+        
+        cm = metrics.confusion_matrix(g2r, h2r, labels=[1, 0])
+        accuracy = metrics.accuracy_score(g2r, h2r)
+        recall = metrics.recall_score(g2r, h2r)
+        precision = metrics.precision_score(g2r, h2r)
+        f1 = metrics.f1_score(g2r, h2r)
+        
+        return cm, accuracy, recall, precision, f1
+
+    def compute_metrics_view(self, hrsl_binary, grid3_binary, threshold):
+        hrsl_resized_thresholded, grid3_resized, convolved = self.__prepare(
+            hrsl_binary, grid3_binary, threshold)
+        
+        g2r, h2r = grid3_binary.ravel(), hrsl_resized_thresholded.ravel()
+        cm = metrics.confusion_matrix(g2r, h2r, labels=[1, 0])
+        accuracy = metrics.accuracy_score(g2r, h2r)
+        recall = metrics.recall_score(g2r, h2r)
+        precision = metrics.precision_score(g2r, h2r)
+        f1 = metrics.f1_score(g2r, h2r)
+
+        # Outputs all products for visualization, debugging, etc.
+        return cm, accuracy, recall, precision, f1, convolved, (hrsl_resized_thresholded, grid3_resized)
+
+
+class SimpleMetrics(Metrics):
+
+    def compute_metrics(self, hrsl_binary, grid3_binary, threshold):
+        # TODO
+        pass
+
+    def compute_metrics_view(self, hrsl_binary, grid3_binary, threshold):
+        # TODO
+        pass
 
 
 class MetricsWorker(threading.Thread):
 
     def __init__(self, group=None, target=None, name=None,
-        args=(), kwargs=None, verbose=None, result_storage=None):
+        args=(), kwargs=None, verbose=None, result_storage=None, metrics_impl=AggregatedMetrics):
 
         super(MetricsWorker, self).__init__(
             group=group, target=target, name='MetricsWorker' + str(name))
@@ -112,6 +146,7 @@ class MetricsWorker(threading.Thread):
         self.grid3_path = kwargs['grid3_path'] if 'grid3_path' in kwargs else None
         self.fake = kwargs['fake'] if 'fake' in kwargs else False
         self.result_storage = result_storage
+        self.metrics_impl = metrics_impl()
         self.table = RasterTableSizeAligned(
             self.hrsl_path, self.grid3_path, self.patch_size, self.patch_size)
     
@@ -149,7 +184,7 @@ class MetricsWorker(threading.Thread):
                         [0, 0, 0, h * w, 1, 0, 0, 0])
                     continue
 
-                cm, accuracy, recall, precision, f1 = compute_metrics(
+                cm, accuracy, recall, precision, f1 = self.metrics_impl.compute_metrics(
                     hrsl_binary, grid3_binary, self.threshold)
                 
                 # Store results in shared matrics:
@@ -164,7 +199,7 @@ class RasterTableScheduler:
 
     def __init__(self, 
         hrsl_path, grid3_path, patch_size, threshold, 
-        n_threads=12, fake=False, worker_class=MetricsWorker):
+        n_threads=12, fake=False, worker_class=MetricsWorker, metrics_impl=AggregatedMetrics):
         
         self.table = RasterTableSizeAligned(hrsl_path, grid3_path, patch_size, patch_size)
         self.hrsl_path = hrsl_path
@@ -177,6 +212,7 @@ class RasterTableScheduler:
         self.grid3_path_thread = []
         self.fake = fake
         self.worker_class = worker_class
+        self.metrics_impl = metrics_impl
 
     def split_thread_indexes(self):
         """
@@ -229,6 +265,7 @@ class RasterTableScheduler:
         for tix in range(self.n_threads):
             threads.append(self.worker_class(
                 result_storage=self.metrics,
+                metrics_impl=self.metrics_impl,
                 args=indexes[tix],
                 kwargs={
                     'threshold': self.threshold,

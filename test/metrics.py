@@ -1,13 +1,9 @@
 import unittest
-from unittest import mock
-import threading
-import logging
-import os, glob, itertools, rasterio
-from os import path
-from rasterio.windows import Window as rWindow
+import threading, logging
+import os, rasterio
 import numpy as np
 
-from humset.utils.definitions import get_project_path, get_dataset_paths
+from humset.utils.definitions import get_project_path
 from humset.metrics import RasterTableScheduler
 from humset.utils.raster import *
 
