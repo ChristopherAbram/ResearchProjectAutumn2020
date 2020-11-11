@@ -27,6 +27,24 @@ def get_shapes(country_of_interest='Nigeria'):
                 regions[shp['properties']['GDLcode']] = shp['geometry']
     return regions
 
+def get_shapes_rasterstats(country_of_interest='Nigeria'):
+    """
+    Extracts shapes of admin 1 level for a given country.
+    Shapes source SHDI shape files(maps)
+    Returns regions, a list of original shapes grouped by a country
+    """
+    shapefile_name = 'GDL Shapefiles V4.shp' # all the countries in the world
+    shapefile_path = os.path.join(get_project_path(), 'data/shapefiles', shapefile_name)
+
+    with fiona.open(shapefile_path) as shapes:
+
+        regions = []
+
+        for shp in shapes:
+            if(shp['properties']['country']== country_of_interest):
+                regions.append(shp)
+    return regions
+
 def plot_shapes(regions):
     """
     Plots all the shapes of a country (all the regions).
