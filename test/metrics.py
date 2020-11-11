@@ -3,6 +3,9 @@ import threading, logging
 import os, rasterio
 import numpy as np
 
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+
 from humset.utils.definitions import get_project_path
 from humset.metrics import RasterTableScheduler, SimpleMetrics
 from humset.utils.raster import *
@@ -124,6 +127,12 @@ class SimpleMetricsTest(unittest.TestCase):
 
                 hrsl_binary = humdata2binary(hrsl_data)
                 grid3_binary = grid2binary(grid3_data)
+
+                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15 ,10))
+                ax1.imshow(hrsl_binary, cmap='gray')
+                gc_data = grid3_binary * 255
+                ax2.imshow(gc_data, cmap='gray')
+                plt.show()
 
                 #  TODO
                 a = 0
