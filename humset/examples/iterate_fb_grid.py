@@ -8,8 +8,8 @@ import rasterio
 from rasterio.windows import Window
 from salem import GoogleVisibleMap
 
-from utils.definitions import get_project_path
-from utils.raster import RasterTable, RasterTableSize
+from humset.utils.definitions import get_project_path
+from humset.utils.raster import RasterTable, RasterTableSize
 
 
 def upsize(img, x, y):

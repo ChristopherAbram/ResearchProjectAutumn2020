@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from src.utils.image import *
+from humset.utils.image import *
 
 
 class ImageUtilsTest(unittest.TestCase):

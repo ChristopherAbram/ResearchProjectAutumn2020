@@ -1,7 +1,7 @@
 import rasterio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 from fiona.crs import from_epsg
-from utils.definitions import get_project_path
+from humset.utils.definitions import get_project_path
 import os
 
 country = 'NGA'
@@ -17,12 +17,15 @@ with rasterio.Env():
     dst_crs = {'init': 'EPSG:3857'}
 
     with rasterio.open(in_file) as src:
-        transform, width, height = calculate_default_transform(src.crs, dst_crs, 
-                                                            src.width, 
-                                                            src.height, 
-                                                            *src.bounds)
+        # transform, width, height = calculate_default_transform(src.crs, dst_crs, 
+        #                                                     src.width, 
+        #                                                     src.height, 
+        #                                                     *src.bounds)
         kwargs = src.meta.copy()
-        kwargs.update({'crs': dst_crs,'transform': transform, 'width': width,'height': height})
+        # kwargs.update({'crs': dst_crs,'transform': transform, 'width': width,'height': height})
+        print(kwargs['transform'])
+
+        calculate_default_transform
 
         with rasterio.open(out_file, 'w', **kwargs) as dst:
                 reproject(source=rasterio.band(src, 1),destination=rasterio.band(dst, 1),

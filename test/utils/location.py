@@ -5,8 +5,8 @@ from unittest.mock import patch
 import os.path as path
 import json
 
-from src.utils.definitions import get_project_path
-from src.utils.location import GeoLocation
+from humset.utils.definitions import get_project_path
+from humset.utils.location import GeoLocation
 
 
 class GeoLocationTest(unittest.TestCase):
@@ -33,7 +33,7 @@ class GeoLocationTest(unittest.TestCase):
             self.assertAlmostEqual(coord['bbox'][i], float(gt_coord['boundingbox'][i]), delta=0.01)
 
 
-    @patch('src.utils.location.Nominatim.geocode')
+    @patch('humset.utils.location.Nominatim.geocode')
     def test_get_coordinates_single_name(self, mocked):
         mocked.return_value.raw = self.gt_coords_single
         geo = GeoLocation('testagent1')
@@ -48,7 +48,7 @@ class GeoLocationTest(unittest.TestCase):
         return m
 
 
-    @patch('src.utils.location.Nominatim.geocode')
+    @patch('humset.utils.location.Nominatim.geocode')
     def test_get_coordinates_list(self, mocked):
         mocked.side_effect = self.give_coords
         geo = GeoLocation('testagent2')

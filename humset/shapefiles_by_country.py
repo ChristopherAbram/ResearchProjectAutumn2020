@@ -5,7 +5,7 @@ import shapely
 import shapely.ops as so
 
 from shapely.geometry import shape
-from utils.definitions import get_project_path
+from humset.utils.definitions import get_project_path
 
 
 def get_shapes(country_of_interest='Nigeria'):

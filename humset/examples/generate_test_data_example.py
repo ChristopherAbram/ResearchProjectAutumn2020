@@ -3,8 +3,8 @@ import cv2, rasterio, salem, os
 from salem import get_demo_file, DataLevels, GoogleVisibleMap, Map, GoogleCenterMap
 from shapely.geometry import box
 
-from utils.definitions import get_project_path
-from utils.raster import get_window_geo
+from humset.utils.definitions import get_project_path
+from humset.utils.raster import get_window_geo
 
 country = 'NGA'
 in_files = [
