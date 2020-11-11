@@ -2,6 +2,8 @@ import numpy as np
 import cv2, rasterio, salem, os
 from salem import get_demo_file, DataLevels, GoogleVisibleMap, Map, GoogleCenterMap
 from shapely.geometry import box
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 
 from humset.utils.definitions import get_project_path
 from humset.utils.raster import get_window_geo
@@ -13,12 +15,13 @@ in_files = [
     os.path.join(get_project_path(), "data", "grid3", '%s - population - v1.2 - mastergrid.tif' % country)
 ]
 
+lat, lon = (6.458601, 3.379998) # Lagos 1
 # lat, lon = (6.541456, 3.312719)  # Lagos 2
-lat, lon = (8.499714, 3.423570) # Ago-Are
+# lat, lon = (8.499714, 3.423570) # Ago-Are
 # lat, lon = (7.382932, 3.929635) # Ibadan
 # lat, lon = (4.850891, 6.993961) # Port Harcourt
 
-box_spread = 0.5
+box_spread = 0.01
 with rasterio.open(in_files[0]) as humdata, rasterio.open(in_files[2]) as grid3:
 
     h_data, h_window = get_window_geo(
@@ -28,6 +31,13 @@ with rasterio.open(in_files[0]) as humdata, rasterio.open(in_files[2]) as grid3:
     g_data, g_window = get_window_geo(
         grid3, box(lon - box_spread, lat - box_spread, 
                         lon + box_spread, lat + box_spread))
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15 ,10))
+    cmap = plt.cm.magma
+    ax1.imshow(h_data, cmap=cmap, norm=LogNorm())
+    gc_data = g_data * 255
+    ax2.imshow(gc_data, cmap='gray')
+    plt.show()
 
     with rasterio.open(
         os.path.join(get_project_path(), 'data', 'out', 'example_humdata.tif'), 'w',

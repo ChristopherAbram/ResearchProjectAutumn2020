@@ -3,9 +3,13 @@ import threading, logging
 import os, rasterio
 import numpy as np
 
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+
 from humset.utils.definitions import get_project_path
-from humset.metrics import RasterTableScheduler
+from humset.metrics import RasterTableScheduler, SimpleMetrics
 from humset.utils.raster import *
+from humset.utils.image import *
 
 
 logging.basicConfig(
@@ -61,44 +65,77 @@ class WorkerMock(threading.Thread):
         logging.info("Complete!")        
 
 
-class RasterTableSchedulerTest(unittest.TestCase):
+# class RasterTableSchedulerTest(unittest.TestCase):
+
+#     def setUp(self):
+#         return super().setUp()
+
+#     @classmethod
+#     def tearDownClass(cls):
+#         return super().tearDownClass()
+
+#     def test_table_scheduler_exhaustivness(self):
+#         country = 'NGA'
+#         in_files = {
+#             'humdata': os.path.join(get_project_path(), 'test', 'data', 'align', 'example_humdata.tif'),
+#             'grid3': os.path.join(get_project_path(), 'test', 'data', 'align', 'example_grid3.tif')
+#         }
+
+#         patch_size = 60
+#         threshold = 0.2
+#         threads = 12
+
+#         # Build output filename:
+#         dirpath = os.path.join(get_project_path(), "data", "out")
+#         filename = '%s_metrics_p%d_t%d.tif' % (country.lower(), patch_size, int(threshold * 100))
+
+#         scheduler = RasterTableScheduler(
+#             in_files['humdata'], in_files['grid3'], 
+#             patch_size, threshold, threads, fake=False, worker_class=WorkerMock)
+
+#         scheduler.run()
+#         scheduler.save(dirpath, filename)
+
+#         with rasterio.open(in_files['grid3']) as dataset, \
+#             rasterio.open(os.path.join(dirpath, filename)) as bypatch:
+#             X = dataset.read(1)
+#             Y = bypatch.read(1)
+#             X = np.nan_to_num(X)
+#             Y = np.nan_to_num(Y)
+#             self.assertTrue((X == Y).astype(np.uint8).mean() >= 0.97)
+
+
+class SimpleMetricsTest(unittest.TestCase):
 
     def setUp(self):
-        return super().setUp()
+        self.cities = ['lagos1', 'lagos2', 'ago_are', 'ibadan', 'port_harcourt']
+        self.spreads = ['003', '01', '05']
 
-    @classmethod
-    def tearDownClass(cls):
-        return super().tearDownClass()
+        self.small_grid3_path = [os.path.join(get_project_path(), 'test', 'data', 'metrics', '%s_%s_grid3.tif' % (city, self.spreads[0])) for city in self.cities]
+        self.middle_grid3_path = [os.path.join(get_project_path(), 'test', 'data', 'metrics', '%s_%s_grid3.tif' % (city, self.spreads[1])) for city in self.cities]
+        self.large_grid3_path = [os.path.join(get_project_path(), 'test', 'data', 'metrics', '%s_%s_grid3.tif' % (city, self.spreads[2])) for city in self.cities]
 
-    def test_table_scheduler_exhaustivness(self):
-        country = 'NGA'
-        in_files = {
-            'humdata': os.path.join(get_project_path(), 'test', 'data', 'align', 'example_humdata.tif'),
-            'grid3': os.path.join(get_project_path(), 'test', 'data', 'align', 'example_grid3.tif')
-        }
+        self.small_humdata_path = [os.path.join(get_project_path(), 'test', 'data', 'metrics', '%s_%s_humdata.tif' % (city, self.spreads[0])) for city in self.cities]
+        self.middle_humdata_path = [os.path.join(get_project_path(), 'test', 'data', 'metrics', '%s_%s_humdata.tif' % (city, self.spreads[1])) for city in self.cities]
+        self.large_humdata_path = [os.path.join(get_project_path(), 'test', 'data', 'metrics', '%s_%s_humdata.tif' % (city, self.spreads[2])) for city in self.cities]
 
-        patch_size = 60
-        threshold = 0.2
-        threads = 12
+    def test_small(self):
+        for inx, (grid3_path, humdata_path) in enumerate(zip(self.small_grid3_path, self.small_humdata_path)):
+            with rasterio.open(humdata_path) as humdata, rasterio.open(grid3_path) as grid3:
+                hrsl_data = humdata.read(1)
+                grid3_data = grid3.read(1)
 
-        # Build output filename:
-        dirpath = os.path.join(get_project_path(), "data", "out")
-        filename = '%s_metrics_p%d_t%d.tif' % (country.lower(), patch_size, int(threshold * 100))
+                hrsl_binary = humdata2binary(hrsl_data)
+                grid3_binary = grid2binary(grid3_data)
 
-        scheduler = RasterTableScheduler(
-            in_files['humdata'], in_files['grid3'], 
-            patch_size, threshold, threads, fake=False, worker_class=WorkerMock)
+                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15 ,10))
+                ax1.imshow(hrsl_binary, cmap='gray')
+                gc_data = grid3_binary * 255
+                ax2.imshow(gc_data, cmap='gray')
+                plt.show()
 
-        scheduler.run()
-        scheduler.save(dirpath, filename)
-
-        with rasterio.open(in_files['grid3']) as dataset, \
-            rasterio.open(os.path.join(dirpath, filename)) as bypatch:
-            X = dataset.read(1)
-            Y = bypatch.read(1)
-            X = np.nan_to_num(X)
-            Y = np.nan_to_num(Y)
-            self.assertTrue((X == Y).astype(np.uint8).mean() >= 0.97)
+                #  TODO
+                a = 0
 
 
 def get_suite():

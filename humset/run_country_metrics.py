@@ -15,7 +15,7 @@ def main(argc, argv):
     patch_size = 60
     thresholds = [0.2, 0.5, 0.8]
     threads = 12
-    impl = SimpleMetrics
+    impl = AggregatedMetrics
 
     for threshold in thresholds:
         print("Compute metrics for patch_size=", patch_size, ", threshold=", threshold)
