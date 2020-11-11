@@ -9,7 +9,7 @@ from matplotlib.widgets import Slider
 from sklearn.metrics import ConfusionMatrixDisplay
 
 from humset.utils.raster import get_window_geo
-from humset.metrics import confusion_matrix, compute_metrics
+from humset.metrics import AggregatedMetrics, SimpleMetrics
 from humset.utils.image import *
 
 
@@ -251,19 +251,13 @@ class AlignMapsEditor:
                     (10, self.images_combined.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         cv2.imshow(self.window_name, self.images_combined)
 
-    def compute_products(self, hrsl_data, grid3_data, threshold):
+    def plot_products(self, hrsl_data, grid3_data, threshold):
         hrsl_binary = humdata2binary(hrsl_data)
         grid3_binary = grid2binary(grid3_data)
-        # compare the two datasets and get confusion matrix
-        cm, convolution_product, (hrsl_thresholded, grid3_resized) = \
-            confusion_matrix(hrsl_binary, grid3_binary, threshold, products=True)
-        cm, accuracy, recall, precision, f1 = compute_metrics(hrsl_binary, grid3_binary, threshold)
 
-        return cm, convolution_product, (hrsl_thresholded, grid3_resized), (accuracy, recall, precision, f1)
-
-    def plot_products(self, hrsl_data, grid3_data, threshold):
-        cm, convolution_product, (hrsl_thresholded, grid3_resized), (accuracy, recall, precision, f1) = \
-            self.compute_products(hrsl_data, grid3_data, threshold)
+        impl = AggregatedMetrics()
+        cm, accuracy, recall, precision, f1, convolution_product, (hrsl_thresholded, grid3_resized) = \
+            impl.compute_metrics_view(hrsl_binary, grid3_binary, threshold)
 
         self.ax1.cla()
         self.ax2.cla()
