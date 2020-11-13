@@ -9,6 +9,7 @@ from fiona.crs import from_epsg
 from shapely.geometry import box
 import matplotlib.pyplot as plt
 import rasterstats
+from scipy import stats 
 
 from humset.utils.definitions import get_project_path
 from rasterstats import zonal_stats
@@ -40,6 +41,7 @@ with rasterio.open(metrics_path) as src:
 
 region_shapes = sbc.get_shapes_rasterstats('Nigeria')
 
+# confusion matrix
 true_positive = zonal_stats(region_shapes, tp_layer, affine=affine, stats="sum")
 false_positive = zonal_stats(region_shapes, fp_layer, affine=affine, stats="sum")
 false_negative = zonal_stats(region_shapes, fn_layer, affine=affine, stats="sum")
@@ -50,9 +52,25 @@ recall = zonal_stats(region_shapes, recall_layer, affine=affine, stats="mean")
 precision = zonal_stats(region_shapes, prec_layer, affine=affine, stats="mean")
 f1 = zonal_stats(region_shapes, f1_layer, affine=affine, stats="mean")
 
-chosen_metric = accuracy
+metrics = {'ACCURACY': accuracy, 'RECALL': recall, 'PRECISION': precision, 'F1': f1}
+labels = []
+correlation = []
 
-np_chosen_metric = np.array(chosen_metric)
-metric_per_region = [d['mean'] for d in np_chosen_metric]
-plt.scatter(region_hdis, metric_per_region)
+for title, chosen_metric in metrics.items():
+    np_chosen_metric = np.array(chosen_metric)
+    metric_per_region = np.array([d['mean'] for d in np_chosen_metric])
+    r, pval = stats.pearsonr(region_hdis, metric_per_region)
+    correlation.append((r, pval))
+    plt.scatter(region_hdis, metric_per_region)
+    plt.xlabel('HDI')
+    labels.append(title)
+    plt.ylabel(title)
+    plt.show()
+
+fig, ax = plt.subplots()
+fig.patch.set_visible(False)
+ax.axis('off')
+ax.axis('tight')
+ax.table(cellText=correlation , rowLabels=labels, colLabels=['Pearsons r', 'p-value'], loc='center')
+fig.set_size_inches(10, 10)
 plt.show()
