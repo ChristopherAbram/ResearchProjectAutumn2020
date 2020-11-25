@@ -4,7 +4,7 @@ import requests
 import shutil
 import urllib.request as request
 from contextlib import closing
-from utils.definitions import get_datasets_uri
+from humset.utils.definitions import get_datasets_uri
 
 datasets = get_datasets_uri()
 script_path = os.path.dirname(os.path.abspath(__file__))
@@ -13,7 +13,10 @@ for dirname, urls in datasets.items():
     current_path = os.path.join(script_path, 'data', dirname)
     os.makedirs(current_path, exist_ok=True)
     for url in urls:
-        filename = url.split('/')[-1]
+        if(url.split('/')[-1] == '?levels=1%2B4&interpolation=0&extrapolation=0&nearest_real=0&format=csv'):
+            filename = 'GDL-Sub-national-HDI-data.csv'
+        else:
+            filename = url.split('/')[-1]
 
         # if file already exists, do nothing
         if os.path.exists(os.path.join(current_path, filename)):

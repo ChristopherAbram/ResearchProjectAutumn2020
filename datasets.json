@@ -5,10 +5,13 @@
     "worldpop": [
         "ftp://ftp.worldpop.org.uk/GIS/Population/Global_2000_2020/2015/NGA/nga_ppp_2015.tif"
     ],
-    "grid3": [
-        "https://s3-eu-west-1.amazonaws.com/files.grid3.gov.ng/pop/GRID3+-+NGA+-+National+Population+Data+-+v1.2.zip"
-    ],
     "shapefiles": [
         "https://globaldatalab.org/assets/2020/03/GDL%20Shapefiles%20V4.zip"
+    ],
+    "hdi": [
+        "https://globaldatalab.org/shdi/download/shdi/NGA/?levels=1%2B4&interpolation=0&extrapolation=0&nearest_real=0&format=csv"
+    ],
+    "grid3": [
+        "https://s3-eu-west-1.amazonaws.com/files.grid3.gov.ng/pop/GRID3+-+NGA+-+National+Population+Data+-+v1.2.zip"
     ]
 }

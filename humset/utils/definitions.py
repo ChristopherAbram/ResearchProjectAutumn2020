@@ -15,6 +15,8 @@ def get_dataset_paths(country=None):
             'humdata': os.path.join(get_project_path(), "data", "humdata", 'population_nga_2018-10-01.tif'),
             'grid3': os.path.join(get_project_path(), "data", "grid3", 'NGA - population - v1.2 - mastergrid.tif'),
             'worldpop': os.path.join(get_project_path(), "data", "worldpop", 'nga_ppp_2015.tif'),
+            'shapefiles' : os.path.join(get_project_path(), "data", "shapefiles", 'GDL Shapefiles V4.shp'),
+            'hdi' : os.path.join(get_project_path(), "data", "hdi", 'GDL-Sub-national-HDI-data.csv'),
         },
     }
     return cd if country is None else cd[country]
