@@ -12,21 +12,12 @@ import rasterstats
 from scipy import stats 
 
 from humset.utils.definitions import get_project_path
+import humset.utils.shdi as shdi
 from rasterstats import zonal_stats
 
 # hdi_path = os.path.join(get_project_path(), 'data', 'shdi', 'GDL-Sub-national-HDI-data.csv')
 
-def get_shdi(country_iso_code='NGA'):
-    hdi_path = os.path.join(get_project_path(), 'data', 'shdi', 'SHDI Complete 4.0 (1).csv')
-    data = pd.read_csv(hdi_path, usecols=['iso_code', 'year', 'level', 'GDLCODE', 'shdi'])
-    data = data.set_index('iso_code', drop=False)
-    data = data.loc[
-        (data['iso_code'] == country_iso_code) & 
-        (data['year'] == 2018) & 
-        (data['level'] == 'Subnat')]
-    return np.array(data.loc[:,['GDLCODE', 'shdi']])
-
-region_shdi = get_shdi('NGA')
+region_shdi = shdi.get_shdi('NGA')
 shdi = region_shdi[:,1]
 # print(region_shdi)
 
