@@ -16,9 +16,6 @@ class Pipeline():
         :param window_height:
         :param window_width:
         """
-        #project_path = get_project_path()
-        #fb_path = project_path / 'data/humdata/population_nga_2018-10-01.tif'
-        #grid_path = project_path / 'data/grid3/NGA - population - v1.2 - mastergrid.tif'
         self.raster1 = rasterio.open(raster1_path)
         self.raster2 = rasterio.open(raster2_path)
         self.result = np.zeros(self.raster2.shape, dtype=np.uint8)
@@ -64,4 +61,19 @@ class Pipeline():
                 # update result
                 self.result[raster2_pixels_unique[:,0], raster2_pixels_unique[:,1]] += counts.astype(np.uint8)
 
-#result.tofile('nigeria-fb_to_grid_mapping.csv', ',')
+
+    def write_to_tif(self):
+        project_path = get_project_path()
+        with rasterio.open(
+                project_path / 'data/metrics/pipeline-counts.tif', \
+                'w', \
+                driver='GTiff', \
+                width=self.raster2.shape[1], \
+                height=self.raster2.shape[0], \
+                count=1, \
+                dtype=np.uint8, \
+                crs=self.raster2.crs, \
+                transform=self.raster2.transform \
+                ) as dst:
+            dst.write(self.result, indexes=1)
+
