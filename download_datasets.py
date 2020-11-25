@@ -15,6 +15,10 @@ for dirname, urls in datasets.items():
     os.makedirs(current_path, exist_ok=True)
     for url in urls:
         filename = unquote(url.split('/')[-1])
+        # if(url.split('/')[-1] == '?levels=1%2B4&interpolation=0&extrapolation=0&nearest_real=0&format=csv'):
+        #     filename = 'GDL-Sub-national-HDI-data.csv'
+        # else:
+        #     filename = url.split('/')[-1]
 
         # if file already exists, do nothing
         if os.path.exists(os.path.join(current_path, filename)):
