@@ -23,7 +23,7 @@ class ArrayIterator:
         # if reached end of the row, but not end of table
         elif self.current_window[0][1] < self.raster.height:
             if log:
-                print(f'row {self.current_window[0][1]} / {self.raster.height}')
+                print(f'progress {round(self.current_window[0][1] / self.raster.height, 4)*100} %')
             self.current_window = (\
                 (self.current_window[0][1], self.current_window[0][1] + self.window_height),\
                 (0, self.window_width)\

@@ -1,5 +1,6 @@
 import rasterio
 import numpy as np
+import time
 
 from utils.helpers import prepare_data, get_pixels, get_project_path, filter_bounds
 from utils.iterator import ArrayIterator
@@ -26,7 +27,8 @@ class Pipeline():
     def run(self):
         self.window_iterator.reset()
         if self.log:
-            print('PIPELINE: starting run')
+            start_time = time.time()
+            print(f'PIPELINE: starting run at {time.strftime("%d %b %Y %H:%M:%S", time.localtime())}')
         while not self.window_iterator.has_reached_end():
 
             # get next window
@@ -65,7 +67,9 @@ class Pipeline():
                 self.result[raster2_pixels_unique[:,0], raster2_pixels_unique[:,1]] += counts.astype(np.uint8)
 
         if self.log:
-            print('PIPELINE: run finished')
+            print(f'PIPELINE: run finished at {time.strftime("%d %b %Y %H:%M:%S", time.localtime())}')
+            duration = time.time() - start_time
+            print(f'PIPELINE: ran in {duration // 60} minutes')
 
 
     def write_to_tif(self):
