@@ -9,7 +9,7 @@ from humset.utils.definitions import get_project_path
 
 shapefile_name = 'GDL Shapefiles V4.shp' # all the countries in the world
 country_of_interest = 'Nigeria'
-shapefile_path = os.path.join(get_project_path(), 'data/shapefiles', shapefile_name)
+shapefile_path = os.path.join(get_project_path(), 'data', 'shapefiles', shapefile_name)
 
 with fiona.open(shapefile_path) as shapes:
 

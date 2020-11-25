@@ -19,7 +19,7 @@ optimistic = 'nga_metrics_p30_t20.tif'
 pesimistic = 'nga_metrics_p30_t80.tif'
 medium = 'nga_metrics_p30_t50.tif'
 
-metrics_tif = os.path.join(get_project_path(), 'data/metrics', medium)
+metrics_tif = os.path.join(get_project_path(), 'data/results', medium)
 
 raster_metrics = rasterio.open(metrics_tif)
 

@@ -16,7 +16,7 @@ optimistic = 'nga_metrics_p30_t20.tif'
 pesimistic = 'nga_metrics_p30_t80.tif'
 medium = 'nga_metrics_p30_t50.tif'
 
-metrics_path = os.path.join(get_project_path(), 'data/metrics', optimistic)
+metrics_path = os.path.join(get_project_path(), 'data/results', optimistic)
 with rasterio.open(metrics_path) as src:
     affine = src.transform
     tp_layer = src.read(1)

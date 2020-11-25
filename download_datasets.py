@@ -4,6 +4,7 @@ import requests
 import shutil
 import urllib.request as request
 from contextlib import closing
+from urllib.parse import unquote
 from utils.definitions import get_datasets_uri
 
 datasets = get_datasets_uri()
@@ -13,7 +14,7 @@ for dirname, urls in datasets.items():
     current_path = os.path.join(script_path, 'data', dirname)
     os.makedirs(current_path, exist_ok=True)
     for url in urls:
-        filename = url.split('/')[-1]
+        filename = unquote(url.split('/')[-1])
 
         # if file already exists, do nothing
         if os.path.exists(os.path.join(current_path, filename)):

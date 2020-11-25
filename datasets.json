@@ -10,5 +10,8 @@
     ],
     "shapefiles": [
         "https://globaldatalab.org/assets/2020/03/GDL%20Shapefiles%20V4.zip"
+    ],
+    "shdi": [
+        "https://globaldatalab.org/assets/2020/03/SHDI%20Complete%204.0%20%281%29.csv"
     ]
 }
