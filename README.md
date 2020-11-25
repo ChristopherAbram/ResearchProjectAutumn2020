@@ -41,6 +41,11 @@ python test/runner.py
 python -m unittest test/utils/location.py
 ```
 
+For new pipeline tests, from project-level dir, run:
+```bash
+pytest test
+```
+
 # Data
 
 Humdata: https://data.humdata.org/dataset/highresolutionpopulationdensitymaps-nga <br>
