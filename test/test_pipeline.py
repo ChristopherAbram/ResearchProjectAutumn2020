@@ -8,6 +8,7 @@ from utils.helpers import prepare_data, get_pixels, get_project_path
 from pipeline import Pipeline
 
 
+# TODO move this to helpers and test it
 def get_corresponding_window(raster1_path, raster2_path):
     """Get window in raster2 that corresponds to whole of raster1. Clip if neccessary."""
     raster1 = rasterio.open(raster1_path)
