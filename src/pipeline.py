@@ -7,7 +7,7 @@ from utils.iterator import ArrayIterator
 
 class Pipeline():
 
-    def __init__(self, raster1_path, raster2_path, window_height, window_width):
+    def __init__(self, raster1_path, raster2_path, window_height, window_width, log):
         """
 
         reaster assume channel 1
@@ -20,14 +20,17 @@ class Pipeline():
         self.raster2 = rasterio.open(raster2_path)
         self.result = np.zeros(self.raster2.shape, dtype=np.uint8)
         self.window_iterator = ArrayIterator(self.raster1, window_height, window_width)
+        self.log = log
 
 
     def run(self):
         self.window_iterator.reset()
+        if self.log:
+            print('PIPELINE: starting run')
         while not self.window_iterator.has_reached_end():
 
             # get next window
-            window = self.window_iterator.pop_window()
+            window = self.window_iterator.pop_window(log=self.log)
 
             # read data from FB raster using current window
             data = self.raster1.read(1,window=window)
@@ -60,6 +63,9 @@ class Pipeline():
 
                 # update result
                 self.result[raster2_pixels_unique[:,0], raster2_pixels_unique[:,1]] += counts.astype(np.uint8)
+
+        if self.log:
+            print('PIPELINE: run finished')
 
 
     def write_to_tif(self):

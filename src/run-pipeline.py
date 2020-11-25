@@ -15,7 +15,8 @@ window_width = 251
 pipeline = Pipeline(fb_raster_path,
                     grid_raster_path,
                     window_height,
-                    window_width)
+                    window_width,
+                    log=True)
 
 pipeline.run()
 
