@@ -1,4 +1,3 @@
-import rasterio
 
 from utils.helpers import get_project_path
 from pipeline import Pipeline
@@ -19,5 +18,4 @@ pipeline = Pipeline(fb_raster_path,
                     log=True)
 
 pipeline.run()
-
 pipeline.write_to_tif()

@@ -1,6 +1,6 @@
 import rasterio
 import numpy as np
-import time
+import time, os
 
 from utils.helpers import prepare_data, get_pixels, get_project_path, filter_bounds
 from utils.iterator import ArrayIterator
@@ -74,6 +74,8 @@ class Pipeline():
 
     def write_to_tif(self):
         project_path = get_project_path()
+        os.system('mkdir -p %s/data/metrics' % project_path)
+
         with rasterio.open(
                 project_path / 'data/metrics/pipeline-counts.tif', \
                 'w', \

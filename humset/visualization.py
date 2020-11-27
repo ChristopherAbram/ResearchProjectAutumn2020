@@ -52,16 +52,17 @@ class AlignMapsEditor:
         cv2.createTrackbar("zoom out", self.window_name, self.zoom, 2000, self.update_zoom)
         cv2.setMouseCallback(self.window_name, self.drag_update)
 
-        if self.name2 == 'GRID3':
-            self.fig, ((self.ax1, self.ax2), (self.ax3, self.ax4), (self.ax5, self.ax6)) = plt.subplots(3, 2, figsize=(6, 9))
-            axcolor = 'lightgoldenrodyellow'
-            self.thresh_ax = plt.axes([0.1, 0.05, 0.8, 0.03], facecolor=axcolor)
-            self.thresh_slider = Slider(self.thresh_ax, 'Threshold', 0.0, 1.0, valinit=0.5, valstep=0.1)
-            self.fig.canvas.set_window_title(self.window_name_1)
-            self.fig.canvas.draw_idle()
-            self.thresh_slider.on_changed(self.on_threshold_update)
+        if self.name2 == 'HUMDATA' or self.name1 == 'HUMDATA':
+            if self.name2 == 'GRID3' or self.name1 == 'GRID3':
+                self.fig, ((self.ax1, self.ax2), (self.ax3, self.ax4), (self.ax5, self.ax6)) = plt.subplots(3, 2, figsize=(6, 9))
+                axcolor = 'lightgoldenrodyellow'
+                self.thresh_ax = plt.axes([0.1, 0.05, 0.8, 0.03], facecolor=axcolor)
+                self.thresh_slider = Slider(self.thresh_ax, 'Threshold', 0.0, 1.0, valinit=0.5, valstep=0.1)
+                self.fig.canvas.set_window_title(self.window_name_1)
+                self.fig.canvas.draw_idle()
+                self.thresh_slider.on_changed(self.on_threshold_update)
 
-        elif self.name2 == 'NORM':
+        if self.name1 == 'NORM' or self.name2 == 'NORM':
             self.fig1, self.ax1 = plt.subplots(2, 2)
             self.fig2, self.ax2 = plt.subplots(2, 2)
             self.plot_colorbars = False
@@ -171,28 +172,49 @@ class AlignMapsEditor:
             grid3_window = grid3_file.window(*bounds)
             self.raw_grid3_data = grid3_file.read(self.index2, window=grid3_window)
             self.visualize_maps(self.raw_hrsl_data, self.raw_grid3_data)
+
+    def convert4visualization(self, name, data):
+        if name == 'HUMDATA':
+            return humdata2visualization(data)
+        elif name == 'GRID3':
+            return grid2visualization(data)
+        elif name == 'NORM':
+            return normalized2visualization(data)
+
+    def convert3channels(self, name, data):
+        if name == 'GRID3':
+            return cv2.merge(
+                (data, data, np.zeros(data.shape, dtype=np.uint8)))
+        elif name == 'NORM':
+            return cv2.applyColorMap(data, cv2.COLORMAP_JET)
+        elif name =='HUMDATA':
+            return cv2.merge(
+                (data, np.zeros(data.shape, dtype=np.uint8), data))
+
+    def text_color(self, name):
+        if name == 'GRID3':
+            return (255, 255, 0)
+        elif name == 'HUMDATA':
+            return (255, 0, 255)
+        return (255, 255, 255)
             
     def visualize_maps(self, hrsl_data, grid3_data):
         # compare the two datasets and get confusion matrix
         if self.name1 == 'HUMDATA' and self.name2 == 'GRID3':
             self.plot_products(hrsl_data, grid3_data, 0.5)
+        elif self.name1 == 'GRID3' and self.name2 == 'HUMDATA':
+            self.plot_products(grid3_data, hrsl_data, 0.5)
 
         # make map {0,1} to {0,255}
-        if self.name1 == 'HUMDATA':
-            hrsl_data = humdata2visualization(hrsl_data)
-        if self.name2 == 'GRID3':
-            grid3_data = grid2visualization(grid3_data)
-        if self.name2 == 'NORM':
+        hrsl_data = self.convert4visualization(self.name1, hrsl_data)
+        grid3_data = self.convert4visualization(self.name2, grid3_data)
+
+        if self.name2 == 'NORM' or self.name1 == 'NORM':
             self.plot_norm_products()
-            grid3_data = normalized2visualization(grid3_data)
 
         # update the images to be displayed overlayed on satellite image
-        self.hrsl_data = cv2.merge((hrsl_data, np.zeros(hrsl_data.shape, dtype=np.uint8), hrsl_data))
-        if self.name2 == 'GRID3':
-            self.grid3_data = cv2.merge(
-                (grid3_data, grid3_data, np.zeros(grid3_data.shape, dtype=np.uint8)))
-        elif self.name2 == 'NORM':
-            self.grid3_data = cv2.applyColorMap(grid3_data, cv2.COLORMAP_JET)
+        self.hrsl_data = self.convert3channels(self.name1, hrsl_data)
+        self.grid3_data = self.convert3channels(self.name2, grid3_data)
 
         crs = salem.gis.check_crs('epsg:4326')
         g = GoogleVisibleMap(
@@ -244,9 +266,9 @@ class AlignMapsEditor:
         self.images_combined = np.hstack((gg_h_img, gg_g_img))
 
         cv2.putText(self.images_combined, self.name1, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
-        cv2.putText(self.images_combined, self.name1, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 1)
+        cv2.putText(self.images_combined, self.name1, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, self.text_color(self.name1), 1)
         cv2.putText(self.images_combined, self.name2, (gg_h_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
-        cv2.putText(self.images_combined, self.name2, (gg_h_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 1)
+        cv2.putText(self.images_combined, self.name2, (gg_h_img.shape[1] + 10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, self.text_color(self.name2), 1)
         cv2.putText(self.images_combined, 'lat: {:.6f} lon: {:.6f}'.format(self.lat, self.lon),
                     (10, self.images_combined.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         cv2.imshow(self.window_name, self.images_combined)

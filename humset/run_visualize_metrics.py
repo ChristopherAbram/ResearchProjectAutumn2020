@@ -16,6 +16,7 @@ def main(argc, argv):
     
     m_inx = 0
     metrics_path = [
+        os.path.join(get_project_path(), 'data', 'metrics', 'pipeline-counts.tif'),
         os.path.join(get_project_path(), 'data', 'results', 'nga_metrics_p30_t20.tif'),
         os.path.join(get_project_path(), 'data', 'results', 'nga_metrics_p30_t50.tif'),
         os.path.join(get_project_path(), 'data', 'results', 'nga_metrics_p30_t80.tif')
@@ -39,14 +40,14 @@ def main(argc, argv):
     else:
         # lat, lon, zoom = (6.541456, 3.312719, 109) # Lagos
         # lat, lon, zoom = (6.457581, 3.380313, 54) # Lagos
-        # lat, lon, zoom = (8.499714, 3.423570, 27) # Ago-Are
-        lat, lon, zoom = (7.382932, 3.929635, 432) # Ibadan
+        lat, lon, zoom = (8.499714, 3.423570, 27) # Ago-Are
+        # lat, lon, zoom = (7.382932, 3.929635, 432) # Ibadan
         # lat, lon, zoom = (4.850891, 6.993961, 109) # Port Harcourt
         # lat, lon, zoom = (11.961825, 8.540164, 213) # Kano
 
         editor = AlignMapsEditor(
-            in_files['humdata'], metrics_path[m_inx], (lat, lon, zoom), 
-            'HUMDATA', 'NORM', index2=5) # 5 is accuracy
+            in_files['grid3'], metrics_path[1], (lat, lon, zoom), 
+            'GRID3', 'NORM', index2=5) # 5 is accuracy
         editor.wait()
 
     return 0
