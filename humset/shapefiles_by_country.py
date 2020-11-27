@@ -1,6 +1,7 @@
 import fiona
 import os
 import matplotlib.pyplot as plt
+import matplotlib
 import shapely
 import shapely.ops as so
 
@@ -67,5 +68,34 @@ def plot_shapes(regions):
             fig.suptitle(gdl_code)
             ax.fill(x, y)
             plt.show()
+    plt.show()
+
+def plot_whole_country(regions, metric_title, metric_per_region):
+    """
+    Plots all the shapes of a country (all the regions).
+    Some regions have more than one shape(e.g. region which includes islands)
+    and in that case we get MultiPolygon instead of just one Polygon.
+    """
+    cmap = matplotlib.cm.get_cmap('viridis_r')
+    fig, ax = plt.subplots()
+    for gdl_code, geo in regions.items():
+        shapely_geometry = shape(geo)
+        if(isinstance(shapely_geometry, shapely.geometry.multipolygon.MultiPolygon)):
+            ax.set_aspect('equal', 'datalim')
+            for geom in shapely_geometry.geoms:
+                x, y = geom.exterior.xy
+                hdi = metric_per_region[gdl_code]
+                color = cmap(hdi)
+                ax.fill(x, y, facecolor=color)
+        else:
+            x, y = shapely_geometry.exterior.xy
+            hdi = metric_per_region[gdl_code]
+            color = cmap(hdi)
+            ax.fill(x, y, facecolor=color)
+    fig.suptitle(metric_title)
+    norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
+    ax2 = fig.add_axes([0.92, 0.1, 0.02, 0.8])
+    cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap, norm=norm)
+    plt.show()
 
     
