@@ -12,22 +12,28 @@ import rasterstats
 from scipy import stats 
 
 from humset.utils.definitions import get_project_path
+import humset.utils.shdi as shdi
 from rasterstats import zonal_stats
 
-hdi_path = os.path.join(get_project_path(), 'data/hdi', 'GDL-Sub-national-HDI-data.csv')
-hdi_nigeria = pd.read_csv(hdi_path, usecols=['GDLCODE','2018'])
-region_codes = np.array(hdi_nigeria)[1:,0]
-ix = np.argsort(region_codes)
-region_codes = region_codes[ix]
-region_hdis =  np.array(hdi_nigeria)[1:,1]
-region_hdis = region_hdis[ix]
-code_hdi = list(zip(region_codes, region_hdis))
+# hdi_path = os.path.join(get_project_path(), 'data', 'shdi', 'GDL-Sub-national-HDI-data.csv')
+
+region_shdi = shdi.get_shdi('NGA')
+shdi = region_shdi[:,1]
+# print(region_shdi)
+
+# hdi_nigeria = pd.read_csv(hdi_path, usecols=['GDLCODE','2018'])
+# region_codes = np.array(hdi_nigeria)[1:,0]
+# ix = np.argsort(region_codes)
+# region_codes = region_codes[ix]
+# region_hdis =  np.array(hdi_nigeria)[1:,1]
+# region_hdis = region_hdis[ix]
+# code_hdi = list(zip(region_codes, region_hdis))
 
 optimistic = 'nga_metrics_p30_t20.tif'
 pesimistic = 'nga_metrics_p30_t80.tif'
 medium = 'nga_metrics_p30_t50.tif'
 
-metrics_path = os.path.join(get_project_path(), 'data/metrics', optimistic)
+metrics_path = os.path.join(get_project_path(), 'data', 'results', optimistic)
 with rasterio.open(metrics_path) as src:
     affine = src.transform
     tp_layer = src.read(1)
@@ -59,9 +65,9 @@ correlation = []
 for title, chosen_metric in metrics.items():
     np_chosen_metric = np.array(chosen_metric)
     metric_per_region = np.array([d['mean'] for d in np_chosen_metric])
-    cr, pval = stats.spearmanr(region_hdis, metric_per_region)
+    cr, pval = stats.spearmanr(shdi, metric_per_region)
     correlation.append((cr, pval))
-    plt.scatter(region_hdis, metric_per_region)
+    plt.scatter(shdi, metric_per_region)
     plt.xlabel('HDI')
     labels.append(title)
     plt.ylabel(title)

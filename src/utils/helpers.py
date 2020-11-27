@@ -33,7 +33,7 @@ def get_pixels(window):
 def filter_bounds(array, bounds):
     """
     Return only those array entries that are within bounds.
-    Lower bounds is inclusive, upper bound is inclusive.
+    Lower bound is inclusive, upper bound is exclusive.
     Bounds are provided as ((lower, upper) for first column, (lower, upper) for second column).
 
     :param array: numpy array of shape (N,2)

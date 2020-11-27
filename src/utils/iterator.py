@@ -13,7 +13,7 @@ class ArrayIterator:
         self.current_window = ((0,window_height),(0,window_width))
         self.reached_end = False
 
-    def go_to_next(self):
+    def go_to_next(self, log=False):
         # if not yet reached end of row
         if self.current_window[1][1]  < self.raster.width:
             self.current_window = (\
@@ -22,6 +22,8 @@ class ArrayIterator:
             )
         # if reached end of the row, but not end of table
         elif self.current_window[0][1] < self.raster.height:
+            if log:
+                print(f'progress {round(self.current_window[0][1] / self.raster.height, 4)*100} %')
             self.current_window = (\
                 (self.current_window[0][1], self.current_window[0][1] + self.window_height),\
                 (0, self.window_width)\
@@ -30,9 +32,9 @@ class ArrayIterator:
         else:
             self.reached_end = True
 
-    def pop_window(self):
+    def pop_window(self, log=False):
         current_window = self.current_window
-        self.go_to_next()
+        self.go_to_next(log)
         return current_window
 
     def has_reached_end(self):

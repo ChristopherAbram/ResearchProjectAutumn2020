@@ -1,5 +1,6 @@
 import rasterio
 import numpy as np
+import time
 
 from utils.helpers import prepare_data, get_pixels, get_project_path, filter_bounds
 from utils.iterator import ArrayIterator
@@ -7,7 +8,7 @@ from utils.iterator import ArrayIterator
 
 class Pipeline():
 
-    def __init__(self, raster1_path, raster2_path, window_height, window_width):
+    def __init__(self, raster1_path, raster2_path, window_height, window_width, log):
         """
 
         reaster assume channel 1
@@ -16,21 +17,22 @@ class Pipeline():
         :param window_height:
         :param window_width:
         """
-        #project_path = get_project_path()
-        #fb_path = project_path / 'data/humdata/population_nga_2018-10-01.tif'
-        #grid_path = project_path / 'data/grid3/NGA - population - v1.2 - mastergrid.tif'
         self.raster1 = rasterio.open(raster1_path)
         self.raster2 = rasterio.open(raster2_path)
         self.result = np.zeros(self.raster2.shape, dtype=np.uint8)
         self.window_iterator = ArrayIterator(self.raster1, window_height, window_width)
+        self.log = log
 
 
     def run(self):
         self.window_iterator.reset()
+        if self.log:
+            start_time = time.time()
+            print(f'PIPELINE: starting run at {time.strftime("%d %b %Y %H:%M:%S", time.localtime())}')
         while not self.window_iterator.has_reached_end():
 
             # get next window
-            window = self.window_iterator.pop_window()
+            window = self.window_iterator.pop_window(log=self.log)
 
             # read data from FB raster using current window
             data = self.raster1.read(1,window=window)
@@ -64,4 +66,24 @@ class Pipeline():
                 # update result
                 self.result[raster2_pixels_unique[:,0], raster2_pixels_unique[:,1]] += counts.astype(np.uint8)
 
-#result.tofile('nigeria-fb_to_grid_mapping.csv', ',')
+        if self.log:
+            print(f'PIPELINE: run finished at {time.strftime("%d %b %Y %H:%M:%S", time.localtime())}')
+            duration = time.time() - start_time
+            print(f'PIPELINE: ran in {duration // 60} minutes')
+
+
+    def write_to_tif(self):
+        project_path = get_project_path()
+        with rasterio.open(
+                project_path / 'data/metrics/pipeline-counts.tif', \
+                'w', \
+                driver='GTiff', \
+                width=self.raster2.shape[1], \
+                height=self.raster2.shape[0], \
+                count=1, \
+                dtype=np.uint8, \
+                crs=self.raster2.crs, \
+                transform=self.raster2.transform \
+                ) as dst:
+            dst.write(self.result, indexes=1)
+
