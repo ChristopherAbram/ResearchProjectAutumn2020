@@ -5,7 +5,7 @@ import shutil
 import urllib.request as request
 from contextlib import closing
 from urllib.parse import unquote
-from utils.definitions import get_datasets_uri
+from humset.utils.definitions import get_datasets_uri
 
 datasets = get_datasets_uri()
 script_path = os.path.dirname(os.path.abspath(__file__))

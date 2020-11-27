@@ -97,5 +97,3 @@ def plot_whole_country(regions, metric_title, metric_per_region):
     ax2 = fig.add_axes([0.92, 0.1, 0.02, 0.8])
     cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap, norm=norm)
     plt.show()
-
-    
