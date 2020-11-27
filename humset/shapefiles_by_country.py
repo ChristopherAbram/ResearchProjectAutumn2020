@@ -78,6 +78,9 @@ def plot_whole_country(regions, metric_title, metric_per_region):
     """
     cmap = matplotlib.cm.get_cmap('viridis_r')
     fig, ax = plt.subplots()
+    ax.set_frame_on(False)
+    ax.axes.get_xaxis().set_visible(False)
+    ax.axes.get_yaxis().set_visible(False)
     for gdl_code, geo in regions.items():
         shapely_geometry = shape(geo)
         if(isinstance(shapely_geometry, shapely.geometry.multipolygon.MultiPolygon)):
@@ -93,7 +96,7 @@ def plot_whole_country(regions, metric_title, metric_per_region):
             color = cmap(hdi)
             ax.fill(x, y, facecolor=color)
     fig.suptitle(metric_title)
-    norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
+    norm = matplotlib.colors.Normalize(vmin=0.5, vmax=1)
     ax2 = fig.add_axes([0.92, 0.1, 0.02, 0.8])
     cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap, norm=norm)
     plt.show()
